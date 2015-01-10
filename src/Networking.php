@@ -62,15 +62,36 @@ class Networking{
 	/** @var string $url **/
 	protected $url;
 
+    /** @var $dispatcher Dispatcher **/
+    protected $dispatcher;
+
+    /**
+     * @return Dispatcher
+     */
+    private function getDispatcher()
+    {
+        return $this->dispatcher;
+    }
+
+    /**
+     *
+     */
+    private function setDispatcher()
+    {
+        $this->dispatcher = new Dispatcher();
+    }
+
 	/**
-	 * @param Client $client
-     * @param Dispatcher $dispatcher
+     * Override to create new Networking Object
+     * Without Extending.
+     *
 	 */
-	public function __construct(Client $client, Dispatcher $dispatcher)
+	 public function __construct()
 	{
-			$this->guzzle     = $client;
-			$this->dispatcher = $dispatcher;
+        $this->setDispatcher();
 	}
+
+
 
 	/**
 	 * If you want to encode any body or query parameters
@@ -152,10 +173,10 @@ class Networking{
 
         $defaults = array();
 
-        if(isset($this->proxy)){
+        if(!empty($this->proxy)){
             $defaults['proxy'] = $this->proxy;
         }
-        if(isset($this->auth)){
+        if(!empty($this->auth)){
             $defaults['auth'] = $this->auth;
         }
 
@@ -224,7 +245,7 @@ class Networking{
 		$jar->extractCookies($this->request, $this->response);
 		$this->cookies = $jar->toArray();
 
-        $this->dispatcher->fire('response.created',[
+        $this->getDispatcher()->fire('response.created',[
             'status_code' => $this->response->getStatusCode(),
             'body'        => $this->response->getBody(),
             'url'         => $this->url,
