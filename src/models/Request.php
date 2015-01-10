@@ -1,4 +1,4 @@
-<?php namespace Drapor\Services\Models;
+<?php namespace Drapor\Networking\Models;
 	/**
 	 * Created by PhpStorm.
 	 * User: michaelkantor
@@ -6,7 +6,7 @@
 	 * Time: 9:12 PM
 	 */
 
-	class Request extends \Model {
+	class Request extends \Eloquent {
 		protected $table ='service_requests';
 
 		protected $guarded = [];

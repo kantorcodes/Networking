@@ -6,7 +6,7 @@
  * Time: 9:59 PM
  */
 use Illuminate\Events\Dispatcher as Dispatcher;
-use Drapor\Services\Models\Request;
+use Drapor\Networking\Models\Request;
 
 class EventHandlers{
 
