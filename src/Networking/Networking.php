@@ -14,7 +14,7 @@ use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Events\Dispatcher;
 use Log;
 
-class Service{
+class Networking{
 
 	/**
 	 * @var string
