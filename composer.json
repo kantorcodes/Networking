@@ -1,0 +1,24 @@
+{
+    "name": "drapor/services",
+    "description": "Do Shit Involving SHit",
+    "authors": [
+        {
+            "name": "Michael Kantor",
+            "email": "info@empathynyc.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "illuminate/support": "4.2.*",
+        "guzzlehttp/guzzle": "4.1.7"
+    },
+    "autoload": {
+        "classmap": [
+            "src/migrations"
+        ],
+        "psr-4": {
+            "Drapor\\Services\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
