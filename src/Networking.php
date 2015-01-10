@@ -31,6 +31,11 @@ class Networking{
 	 */
 	public $proxy;
 
+    /**
+     * @var array
+     */
+    public $auth;
+
 	/**
 	 * @var array
 	 */
@@ -140,20 +145,27 @@ class Networking{
         return $response;
     }
 
-	/**
-	 * @return Client
+    /**
+     * @return Client
      */
-	private function getClient() {
-        $guzzle = new Client( [
-				'base_url' => $this->url
-		]);
+    private function getClient() {
+
+        $defaults = array();
 
         if(isset($this->proxy)){
-            $guzzle->setDefaultOption('proxy',$this->proxy);
+            $defaults['proxy'] = $this->proxy;
+        }
+        if(isset($this->auth)){
+            $defaults['auth'] = $this->auth;
         }
 
-		return $guzzle;
-	}
+        $guzzle = new Client( [
+            'base_url' => $this->url,
+            'defaults' => $defaults
+        ]);
+
+        return $guzzle;
+    }
 
 	private function getCookieJar() {
 		return  new CookieJar;
