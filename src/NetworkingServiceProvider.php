@@ -18,8 +18,7 @@ class NetworkingServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-		$this->package('drapor/services', 'drapor/services', __DIR__.'/..');
-
+		$this->package('drapor/networking', 'drapor/networking', __DIR__.'/..');
 	}
 
 	/**
