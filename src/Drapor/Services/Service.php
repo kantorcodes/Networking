@@ -1,280 +1,281 @@
 <?php namespace Drapor\Services;
+/**
+ * Created by PhpStorm.
+ * User: michaelkantor
+ * Date: 12/29/14
+ * Time: 2:57 PM
+ */
+use GuzzleHttp\Client;
+use GuzzleHttp\Stream\Stream;
+use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Message\RequestInterface;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Cookie\CookieJar;
+use Illuminate\Events\Dispatcher;
+use Log;
+
+class Service{
+
 	/**
-	 * Created by PhpStorm.
-	 * User: michaelkantor
-	 * Date: 12/29/14
-	 * Time: 2:57 PM
+	 * @var string
 	 */
-	use GuzzleHttp\Client;
-	use GuzzleHttp\Stream\Stream;
-	use GuzzleHttp\Message\ResponseInterface;
-	use GuzzleHttp\Message\RequestInterface;
-	use GuzzleHttp\Exception\RequestException;
-	use GuzzleHttp\Cookie\CookieJar;
-	use Illuminate\Events\Dispatcher;
-	use Log;
+	public $baseUrl;
 
-	class Service{
+	/**
+	 * @var string
+	 */
+	public $scheme;
 
-		/**
-		 * @var string
-		 */
-		public $baseUrl;
+	/**
+	 * @var string
+	 */
+	public $proxy;
 
-		/**
-		 * @var string
-		 */
-		public $scheme;
-
-		/**
-		 * @var string
-		 */
-		public $proxy;
-
-		/**
-		 * @var array
-		 */
-		public $headers;
-
-		/** @var $response ResponseInterface **/
-		protected $response;
-
-		/** @var $request RequestInterface **/
-		protected $request;
-
-		/** @var array $cookies **/
-		protected $cookies;
-
-		/** @var string $url **/
-		protected $url;
+	/**
+	 * @var array
+	 */
+	public $headers;
 
 
+	/**
+	 * @var array
+	 */
+	public $options  = [
+			'body' => false,
+			'query' => false
+		];
 
-		/**
-		 * @param Client $client
-		 * @param Dispatcher $dispatcher
-		 */
-		private function __construct(Client $client, Dispatcher $dispatcher)
-		{
+	/** @var $response ResponseInterface **/
+	protected $response;
+
+	/** @var $request RequestInterface **/
+	protected $request;
+
+	/** @var array $cookies **/
+	protected $cookies;
+
+	/** @var string $url **/
+	protected $url;
+
+	/**
+	 * @param Client $client
+     * @param Dispatcher $dispatcher
+	 */
+	public function __construct(Client $client, Dispatcher $dispatcher)
+	{
 			$this->guzzle     = $client;
 			$this->dispatcher = $dispatcher;
-		}
+	}
 
-		/**
-		 * @return \GuzzleHttp\Message\ResponseInterface
-		 */
-		private function getResponse() {
-			return $this->response;
-		}
+	/**
+	 * If you want to encode any body or query parameters
+	 * then you call this method to set a new array of options.
+     * @param array $options
+	 */
+	public function setOptions( array $options ){
+			$this->options = $options;
+	}
 
-		/**
-		 * @param ResponseInterface $response
-		 */
-		private function setResponse( $response ) {
-			$this->response = $response;
-			Log::info($this->response->getBody());
+	/**
+	 * @param array $fields
+	 * @param $endpoint
+	 * @param string $type
+	 *
+     * @return void
+	 */
+	private function createRequest(array $fields = [],$endpoint,$type = "get"){
 
-			$this->dispatcher->fire('response.created',[
-				'status_code' => $response->getStatusCode(),
-				'body'        => $response->getBody(),
-				'url'         => $this->url,
-				'headers'     => $this->headers,
-				'cookies'     => $this->cookies
-			]);
-		}
+		\Log::info("Logging requests headers..");
+		\Log::info($this->headers);
 
-		/**
-		 * @return RequestInterface
-		 */
-		private function getRequest() {
-			return $this->request;
-		}
+        $this->setUrl($this->baseUrl.$endpoint);
 
-		/**
-		 * @param RequestInterface $request
-		 */
-		private function setRequest( $request ) {
-			$this->request = $request;
-		}
+		$client = $this->getClient();
+		$jar    = $this->getCookieJar();
+        $url    = $this->getUrl();
+		$opts   = $this->configureRequest( $fields, $jar );
 
-		/**
-		 * @return array
-		 */
-		private function getCookies() {
-			Log::info("Logging requests cookies...");
-			Log::info($this->cookies);
-			return $this->cookies;
-		}
+		$request  = $client->createRequest($type,$url,$opts);
+		$response = $client->send($request);
 
-		/**
-		 * @param CookieJar $jar
-		 */
-		private function setCookies( $jar ) {
-			$jar->extractCookies($this->request, $this->response);
-			$this->cookies = $jar->toArray();
-		}
+		$this->setRequest($request);
+		$this->setResponse($response);
+        $this->setCookies($jar);
+	}
 
-		/**
-		 * @return string
-		 */
-		private function getUrl() {
-			return $this->url;
-		}
+     /**
+     * Unless $fields['body'] or $fields['query'] is specified, they will not
+     * be sent in the http request.
+     * @param $fields
+     * @param $endpoint
+     * @param $type
+     * @return array
+     */
+    public function send( array $fields,$endpoint,$type ) {
+        try {
 
-		/**
-		 * @param string $url
-		 */
-		private function setUrl( $url ) {
-			$this->url = $url;
-		}
+            $this->createRequest( $fields,$endpoint,$type);
+            $res = $this->getResponse();
 
+            //Set Status Code + Body For Ok Response
+            $body = json_decode($res->getBody());
+            $status_code = $res->getStatusCode();
 
-		/**
-		 * Unless $fields['body'] or $fields['query'] is specified, they will not
-		 * be sent in the http request.
-		 * @param $fields
-		 * @param $endpoint
-		 * @param $type
-		 * @return array
-		 */
-		public function send( array $fields, $endpoint,$type ) {
-			try {
-				$this->createRequest( $fields, $endpoint,$type);
-				$res = $this->getResponse();
+        }catch(RequestException $e){
 
-				//Set Status Code + Body For Ok Response
-				$body = json_decode($res->getBody());
-				$status_code = $res->getStatusCode();
+            $res = $e->getResponse();
+            $body = json_decode($res->getBody());
+            $status_code = $res->getStatusCode();
 
-			}catch(RequestException $e){
+        }
 
-				$res = $e->getResponse();
-				$body = json_decode($res->getBody());
-				$status_code = $res->getStatusCode();
-			}
-			$cookie = $this->getCookies();
-			$this->setUrl($res->getEffectiveUrl());
+        $cookie = $this->getCookies();
 
-			$response =  [
-				'body'        => $body,
-				'status_code' => $status_code,
-				'cookie'      => $cookie
-			];
+        $response =  [
+            'body'        => $body,
+            'status_code' => $status_code,
+            'cookie'      => $cookie
+        ];
 
-			return $response;
-		}
+        return $response;
+    }
 
+	/**
+	 * @return Client
+     */
+	private function getClient() {
+        $guzzle = new Client( [
+				'base_url' => $this->url
+		]);
 
-		/**
-		 * @param array $fields
-		 * @param $endpoint
-		 * @param string $type
-		 *
-		 * @return void
-		 */
-		private function createRequest(array $fields = [],$endpoint,$type = "get"){
+        if(isset($this->proxy)){
+            $guzzle->setDefaultOption('proxy',$this->proxy);
+        }
 
-			\Log::info("Logging requests headers..");
-			\Log::info($this->headers);
+		return $guzzle;
+	}
 
-			$client = $this->getClient();
-			$jar    = $this->getCookieJar();
+	private function getCookieJar() {
+		return  new CookieJar;
+	}
 
-			$url = $this->baseUrl.$endpoint;
-			$opts = $this->getOptions( $fields, $jar );
+	/**
+	 * @param array $fields
+	 * @param $jar
+	 *
+     * @return array
+	 */
+	private function configureRequest( array $fields, $jar ) {
 
-			$request  = $client->createRequest($type,$url,$opts);
-			$response = $client->send($request);
-
-			$this->setRequest($request);
-			$this->setResponse($response);
-			$this->setCookies($jar);
-		}
-
-
-
-		/**
-		 * @param null $proxy
-		 *
-		 * @return ResponseInterface|void
-		 */
-		public function checkIp($proxy = null){
-			$this->createRequest(["time" => time(), 'body' => false, 'query' => false],'/getIp',$proxy);
-
-			$res = $this->getRequest();
-
-			return $res->getBody();
-		}
-
-		/**
-		 * @param $fields
-		 * @param $endpoint
-		 * @param $proxy
-		 * @return \GuzzleHttp\Message\ResponseInterface
-		 */
-		public function createStreamRequest(array $fields,$endpoint,$proxy = null)
-		{
-			$body = json_encode($fields);
-
-			$guzzle = new Client([
-				'base_url' => $this->url,
-				'headers'  => $this->headers,
-				'proxy'    => $proxy
-			]);
-
-			$req = $guzzle->createRequest('POST', $endpoint);
-			$req->setScheme($this->scheme);
-			$req->setBody(Stream::factory($body));
-
-			$response = $guzzle->send($req);
-
-			return $response;
-		}
-
-
-		/**
-		 * @return Client
-		 */
-		private function getClient() {
-			$guzzle = new Client( [
-				'base_url' => $this->url,
-				'defaults' => [
-					'proxy' => $this->proxy,
-				],
-			]);
-
-			return $guzzle;
-		}
-
-		private function getCookieJar() {
-			return  new CookieJar;
-		}
-
-		/**
-		 * @param array $fields
-		 * @param $jar
-		 *
-		 * @return array
-		 */
-		private function getOptions( array $fields, $jar ) {
-
-			$opts = [
+		$opts = [
 				'headers' => $this->headers,
 				'cookies' => $jar
-			];
+		];
 
-			if ( ! empty( $fields ) ) {
-
-				if($fields['body']){
-					$opts['body'] = $fields;
-				}
-				if($fields['query']){
-					$opts['query'] = $fields;
-				}
-
+		if ( ! empty( $fields ) ) {
+            $config = $this->getOptions();
+			if($config['body']){
+				$opts['body'] = $fields;
 			}
-			return $opts;
+			if($config['query']){
+				$opts['query'] = $fields;
+			}
 		}
+		   return $opts;
+	}
 
+	/**
+     * @return array
+	 */
+	private function getOptions() {
+		return $this->options;
+	}
+
+	/**
+	 * @param RequestInterface $request
+	 */
+	private function setRequest( $request ) {
+		$this->request = $request;
+	}
+
+	/**
+	 * @param ResponseInterface $response
+	 */
+	private function setResponse( $response ) {
+		$this->response = $response;
+	}
+
+	/**
+	 * @param CookieJar $jar
+	 */
+	private function setCookies( $jar ) {
+		$jar->extractCookies($this->request, $this->response);
+		$this->cookies = $jar->toArray();
+
+        $this->dispatcher->fire('response.created',[
+            'status_code' => $this->response->getStatusCode(),
+            'body'        => $this->response->getBody(),
+            'url'         => $this->url,
+            'headers'     => $this->headers,
+            'cookies'     => $this->cookies
+        ]);
 
 	}
+
+	/**
+	 * @return \GuzzleHttp\Message\ResponseInterface
+	 */
+	private function getResponse() {
+		return $this->response;
+	}
+
+	/**
+	 * @return array
+	 */
+	private function getCookies() {
+		Log::info("Logging requests cookies...");
+		Log::info($this->cookies);
+		return $this->cookies;
+	}
+
+	/**
+     * @param string $url
+	 */
+	private function setUrl( $url ) {
+		$this->url = $url;
+	}
+
+	/**
+	 * @param $fields
+	 * @param $endpoint
+     * @param $proxy
+	 * @return \GuzzleHttp\Message\ResponseInterface
+	 */
+	public function createStreamRequest(array $fields,$endpoint,$proxy = null){
+		$body = json_encode($fields);
+
+		$guzzle = $this->getClient();
+
+		$req = $guzzle->createRequest('POST', $endpoint);
+		$req->setScheme($this->scheme);
+		$req->setBody(Stream::factory($body));
+
+		$response = $guzzle->send($req);
+
+		return $response;
+	}
+
+    /**
+     * @return RequestInterface
+     */
+    private function getRequest() {
+        return $this->request;
+    }
+
+    /**
+     * @return string
+     */
+    private function getUrl() {
+        return $this->url;
+    }
+}
