@@ -1,4 +1,4 @@
-<?php namespace Drapor\Services;
+<?php namespace Drapor\Networking;
 
 use Illuminate\Support\ServiceProvider;
 

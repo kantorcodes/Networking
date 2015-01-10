@@ -1,4 +1,4 @@
-<?php namespace Drapor\Services;
+<?php namespace Drapor\Networking;
 /**
  * Created by PhpStorm.
  * User: michaelkantor

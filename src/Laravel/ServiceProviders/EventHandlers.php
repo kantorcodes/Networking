@@ -1,4 +1,4 @@
-<?php namespace Drapor\ServiceLayer\Laravel\ServiceProviders;
+<?php namespace Drapor\Networking\Laravel\ServiceProviders;
 /**
  * Created by PhpStorm.
  * User: michaelkantor
@@ -21,7 +21,7 @@ class EventHandlers{
 	 */
 	public function subscribe($events)
 	{
-		$events->listen('response.created', 'Drapor\ServiceLayer\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
+		$events->listen('response.created', 'Drapor\Networking\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
 	}
 
 
