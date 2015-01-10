@@ -2,7 +2,7 @@
 
 use Illuminate\Support\ServiceProvider;
 
-class HttpServiceProvider extends ServiceProvider {
+class NetworkingServiceProvider extends ServiceProvider {
 
 	/**
 	 * Indicates if loading of the provider is deferred.
