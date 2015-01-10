@@ -1,6 +1,6 @@
 {
     "name": "drapor/services",
-    "description": "Do Shit Involving SHit",
+    "description": "Make Http Requests",
     "authors": [
         {
             "name": "Michael Kantor",

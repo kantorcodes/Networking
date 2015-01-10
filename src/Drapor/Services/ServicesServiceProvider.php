@@ -29,7 +29,7 @@ class ServicesServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		//$this->app->register('Drapor\Services\Laravel\ServiceProviders\EventHandlerProvider');
+		$this->app->register('Drapor\Services\Laravel\ServiceProviders\EventHandlerProvider');
 	}
 
 	/**
