@@ -163,7 +163,6 @@ class Networking
     /**
      * @param $fields
      * @param $endpoint
-     * @param $proxy
      * @return \GuzzleHttp\Message\ResponseInterface
      */
     public function createStreamRequest(array $fields, $endpoint)
@@ -331,6 +330,14 @@ class Networking
         $this->setBody(json_decode($response->getBody(),true));
         $this->setStatusCode($response->getStatusCode());
         $this->response = $response;
+
+        $this->getDispatcher()->fire('response.created', [
+            'status_code' => $this->getStatusCode(),
+            'body' =>    $this->getBody(),
+            'url' =>     $this->getUrl(),
+            'headers' => $this->headers,
+            'cookies' => $this->getCookies()
+        ]);
     }
 
     /**
