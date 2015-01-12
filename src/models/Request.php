@@ -1,4 +1,5 @@
 <?php namespace Drapor\Networking\Models;
+use Illuminate\Database\Eloquent\Model;
 	/**
 	 * Created by PhpStorm.
 	 * User: michaelkantor
@@ -6,10 +7,12 @@
 	 * Time: 9:12 PM
 	 */
 
-	class Request extends \Eloquent {
+	class Request extends Model {
 		protected $table ='service_requests';
 
 		protected $guarded = [];
+        protected $hidden  = [];
 		public $timestamps = true;
 
-	}
+
+    }

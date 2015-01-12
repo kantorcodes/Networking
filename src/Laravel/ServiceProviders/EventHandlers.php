@@ -21,7 +21,7 @@ class EventHandlers{
 	 */
 	public function subscribe($events)
 	{
-		$events->listen('response.created', 'Drapor\Networking\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
+		$events->listen(['response.created'], 'Drapor\Networking\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
 	}
 
 
