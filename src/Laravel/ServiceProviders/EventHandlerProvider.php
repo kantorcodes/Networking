@@ -1,7 +1,6 @@
 <?php namespace Drapor\Networking\Laravel\ServiceProviders;
+use Drapor\Networking\Laravel\Handlers\ResponseCreatedHandler;
 use Illuminate\Support\ServiceProvider;
-use Drapor\Networking\Laravel\ServiceProviders\EventHandlers;
-
 /**
  * Created by PhpStorm.
  * User: michaelkantor
@@ -12,7 +11,7 @@ use Drapor\Networking\Laravel\ServiceProviders\EventHandlers;
 	class EventHandlerProvider extends ServiceProvider{
 
 		public function boot(){
-			$this->app->events->subscribe(new EventHandlers());
+			$this->app->events->subscribe(new ResponseCreatedHandler());
 		}
 
 		public function register(){

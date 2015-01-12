@@ -280,10 +280,10 @@ class Networking
 
         $this->getDispatcher()->fire('response.created', [
             'status_code' => $this->getStatusCode(),
-            'body' =>    $this->getBody(),
-            'url' =>     $this->getUrl(),
-            'headers' => $this->headers,
-            'cookies' => $this->getCookies()
+            'body'        => $this->getBody(),
+            'url'         => $this->getUrl(),
+            'headers'     => $this->headers,
+            'cookies'     => $this->getCookies()
         ]);
 
     }
@@ -333,10 +333,10 @@ class Networking
 
         $this->getDispatcher()->fire('response.created', [
             'status_code' => $this->getStatusCode(),
-            'body' =>    $this->getBody(),
-            'url' =>     $this->getUrl(),
-            'headers' => $this->headers,
-            'cookies' => $this->getCookies()
+            'body'        => $this->getBody(),
+            'url'         => $this->getUrl(),
+            'headers'     => $this->headers,
+            'cookies'     => $this->getCookies()
         ]);
     }
 
