@@ -19,6 +19,9 @@ class NetworkingServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->package('drapor/networking', 'drapor/networking', __DIR__.'/..');
+        \View::addNamespace('networking', __DIR__.'/views');
+        include __DIR__.'/routes.php';
+
 	}
 
 	/**
@@ -28,7 +31,9 @@ class NetworkingServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app->register('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
+		//$this->app->register('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
+        $this->app->bind('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
+        $this->registerModels();
 	}
 
 	/**
@@ -41,4 +46,12 @@ class NetworkingServiceProvider extends ServiceProvider {
 		return array();
 	}
 
+
+    public function registerModels()
+    {
+        $this->app['requestsModel'] = $this->app->share(function () {
+            return new \Drapor\Networking\Models\Request();
+        });
+
+    }
 }

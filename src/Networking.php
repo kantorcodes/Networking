@@ -13,11 +13,9 @@ use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Events\Dispatcher;
-use Log;
 
 class Networking
 {
-
     /**
      * @var string
      */
@@ -71,25 +69,14 @@ class Networking
     /** @var string $url * */
     protected $url;
 
-    /** @var $dispatcher Dispatcher * */
-    protected $dispatcher;
+    /** @var $events Dispatcher * */
+    protected $events;
 
-    /**
-     * Override to create new Networking Object
-     * Without Extending.
-     *
-     */
-    public function __construct()
-    {
-        $this->setDispatcher();
-    }
 
-    /**
-     *
-     */
-    private function setDispatcher()
+    function __construct()
     {
-        $this->dispatcher = new Dispatcher();
+        $this->events = new Dispatcher;
+        //$this->events->listen('networking.response.created', 'Drapor\Networking\Laravel\Handlers\ResponseCreatedHandler@handle');
     }
 
     /**
@@ -140,9 +127,6 @@ class Networking
      */
     private function createRequest(array $fields = [], $endpoint, $type = "get")
     {
-
-        \Log::info("Logging requests headers..");
-        \Log::info($this->headers);
 
         $this->setUrl($this->baseUrl . $endpoint);
 
@@ -264,8 +248,6 @@ class Networking
      */
     private function getCookies()
     {
-        Log::info("Logging requests cookies...");
-        Log::info($this->cookies);
         return $this->cookies;
     }
 
@@ -274,17 +256,15 @@ class Networking
      */
     private function setCookies($jar)
     {
-        \Log::info($this->getResponse()->getHeader('Set-Cookie'));
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
-
-        $this->getDispatcher()->fire('response.created', [
+        $this->events->fire('networking.response.created', [[
             'status_code' => $this->getStatusCode(),
-            'body'        => $this->getBody(),
+            'body'        => json_encode($this->getBody()),
             'url'         => $this->getUrl(),
-            'headers'     => $this->headers,
-            'cookies'     => $this->getCookies()
-        ]);
+            'headers'     => json_encode($this->headers),
+            'cookies'     => json_encode($this->getCookies())
+        ]]);
 
     }
 
@@ -331,7 +311,8 @@ class Networking
         $this->setStatusCode($response->getStatusCode());
         $this->response = $response;
 
-        $this->getDispatcher()->fire('response.created', [
+
+        $this->events->fire('response.created', [
             'status_code' => $this->getStatusCode(),
             'body'        => $this->getBody(),
             'url'         => $this->getUrl(),
@@ -345,7 +326,7 @@ class Networking
      */
     private function getDispatcher()
     {
-        return $this->dispatcher;
+        return $this->events;
     }
 
     /**
@@ -379,5 +360,15 @@ class Networking
     {
         $this->body = $body;
     }
+
+    /**
+     *
+     */
+    private function setDispatcher()
+    {
+        $this->events = new Dispatcher();
+
+    }
+
 
 }

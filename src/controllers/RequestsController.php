@@ -1,4 +1,4 @@
-<?php
+<?php namespace Drapor\Networking\Controllers;
 /**
  * Created by PhpStorm.
  * User: michaelkantor
@@ -7,25 +7,25 @@
  */
 
 use Drapor\Networking\Models\Request;
+use \Illuminate\Routing\Controller;
+use View;
 
 class RequestsController extends Controller{
 
 
     protected $request;
+    protected $view;
 
-    public function __construct(Request $request){
+    public function __construct(Request $request, View $view){
         $this->request = $request;
+        $this->view    = $view;
     }
 
-
-    /**
-     *
-     */
     public function index(){
-         $requests = $this->request->paginate(20);
+        $requests = $this->request->paginate(20);
 
         $view['requests'] = $requests;
 
-        return View::make('logs.index');
+        return View::make('networking::logs.index',$view);
     }
 }
