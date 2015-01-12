@@ -48,8 +48,9 @@ class Networking
      * @var array $options
      */
     public $options = [
-        'body' => false,
-        'query' => false
+        'body'            => false,
+        'query'           => false,
+        'allow_redirects' => false
     ];
 
     /** @var $body array * */
