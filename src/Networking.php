@@ -204,10 +204,10 @@ class Networking
             }
             if($config['allow_redirects']){
                 $opts['allow_redirects'] = [
-                    'max'       => 10,       // allow at most 10 redirects.
-                    'strict'    => true,     // use "strict" RFC compliant redirects.
-                    'referer'   => true,     // add a Referer header
-                    'protocols' => [$this->scheme] // only allow https URLs
+                    'max'       => 10,
+                    'strict'    => true,
+                    'referer'   => true,
+                    'protocols' => [$this->scheme]
                 ];
             }
         }

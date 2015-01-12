@@ -10,26 +10,23 @@ use Drapor\Networking\Models\Request;
 
 class EventHandlers{
 
-	protected $request;
-
-	public function __construct(Request $request){
-		$this->request = $request;
-	}
 
 	/**
 	 * @param $events Dispatcher
 	 */
 	public function subscribe($events)
 	{
-		$events->listen(['response.created'], 'Drapor\Networking\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
+        \Log::info("Subscribing...");
+		$events->listen('response.created', 'Drapor\Networking\Laravel\ServiceProviders\EventHandlers@handleResponseCreated');
 	}
 
 
 	/**
 	 * @param array $data
 	 */
-	public function handleResponseCreated(array $data){
+	public function handleResponseCreated($data){
 
-		$this->request->create($data);
+        \Log::info("New Event");
+		Request::create($data);
 	}
 }
