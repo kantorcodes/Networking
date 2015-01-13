@@ -12,7 +12,7 @@
         "illuminate/container": "4.2.*",
         "slim/slim": "2.*",
         "zeuxisoo/slim-whoops": "0.2.0",
-        "filp/whoops": "1.1.2",
+        "filp/whoops": "1.1.*",
         "illuminate/database": "4.2.*",
         "illuminate/support": "4.2.*",
         "illuminate/session": "4.2.*",

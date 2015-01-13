@@ -18,14 +18,21 @@ class ResponseCreatedHandler{
      */
     public function handle(array $data){
 
+
         if(strlen($data["body"]) >= 2000){
-            $data["body"] =  json_encode(str_replace("\\","",substr($data["body"], 0, 2000)));
+            $shrunk            = str_replace("[","",$data["body"]);
+            $shrunk            = str_replace("]","",$shrunk);
+            $data["body"]      = stripslashes(substr($shrunk, 0, 100));
         }
 
         $this->queue->push(function($job) use ($data)
         {
+            $reencoded    = json_encode(["body" => $data["body"],"responseType" => "html"]);
+            $data["body"] =  trim($reencoded, '"');
+
             Request::create($data);
             $job->delete();
         });
     }
+
 }

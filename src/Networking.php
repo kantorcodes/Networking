@@ -339,9 +339,11 @@ class Networking
             $body            = \GuzzleHttp\json_decode($response->getBody(),true);
             $is_json         = true;
         }catch(\InvalidArgumentException $e){
-            $body = ["body" => $response->getBody()->__toString()];
+            $body = [$response->getBody()->__toString()];
+
         }
 
+        //HTML/XML will always have an output.
         if(!(count($body) > 1) && $is_json){
             $body = [
                 "message" => "No Response Received."

@@ -55,7 +55,8 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
          */
         private function toString($value)
         {
-            $body = json_decode($value, true);
+
+            $body = \GuzzleHttp\json_decode($value, true);
             $string = '';
             foreach ($body as $key => $value) {
                     $string .= trim("$key : $value</br>");
