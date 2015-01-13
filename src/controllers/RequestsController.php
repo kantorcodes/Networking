@@ -18,7 +18,7 @@ class RequestsController extends Controller{
 
     public function __construct(Request $request, View $view){
         $this->request = $request;
-        $this->view    = $view;
+        $this->view    = app("view");
     }
 
     public function index(){
@@ -26,6 +26,6 @@ class RequestsController extends Controller{
 
         $view['requests'] = $requests;
 
-        return View::make('networking::logs.index',$view);
+        return $this->view->make('networking::logs.index',$view);
     }
 }
