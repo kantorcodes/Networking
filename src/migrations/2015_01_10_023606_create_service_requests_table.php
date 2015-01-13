@@ -21,6 +21,7 @@ class CreateServiceRequestsTable extends Migration {
 			$table->text('cookies');
 			$table->string('url');
 			$table->integer('status_code');
+            $table->float('time_elapsed',16,8);
 			$table->timestamps();
 		});
 	}

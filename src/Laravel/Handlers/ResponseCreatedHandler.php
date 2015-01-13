@@ -6,15 +6,23 @@
  * Time: 9:59 PM
  */
 use Drapor\Networking\Models\Request;
-
 class ResponseCreatedHandler{
 
+    protected $queue;
 
+    public function __construct(){
+        $this->queue = app('queue');
+    }
     /**
      * @param array $data
      */
     public function handle(array $data){
 
-        Request::create($data);
+        $this->queue->push(function($job) use ($data)
+        {
+            Request::create($data);
+
+            $job->delete();
+        });
     }
 }

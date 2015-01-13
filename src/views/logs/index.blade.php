@@ -2,27 +2,29 @@
 
 @section('content')
 
-<table class="table table-responsive table-bordered text-center">
-    <thead>
-      <tr>
+<table class="table table-responsive table-bordered">
+    <thead class="bg-primary">
+      <tr class="text-center">
          <th>Endpoint Url</th>
          <th>Response Status Code</th>
          <th>Response Body</th>
          <th>Response Cookies</th>
          <th>Response Headers</th>
+         <th>Time Elapsed</th>
          </tr>
          </thead>
-         <tbody>
+         <tbody class="bg-success">
 
          @if(!empty($requests))
 
              @foreach($requests->getCollection()->all() as $request)
                 <tr>
                 <td>{{$request->url}}</td>
-                <td>{{$request->status}}</td>
+                <td>{{$request->status_code}}</td>
                 <td>{{$request->body}}</td>
                 <td>{{$request->cookies}}</td>
                 <td>{{$request->headers}}</td>
+                <td>{{$request->time_elapsed }}</td>
                 </tr>
              @endforeach
              {{ $requests->links()}}

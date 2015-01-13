@@ -31,8 +31,7 @@ class NetworkingServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		//$this->app->register('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
-        $this->app->bind('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
+		$this->app->register('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
         $this->registerModels();
 	}
 
@@ -49,6 +48,9 @@ class NetworkingServiceProvider extends ServiceProvider {
 
     public function registerModels()
     {
+        /*
+         * TODO use the shared instance of the model and create an observable.
+         */
         $this->app['requestsModel'] = $this->app->share(function () {
             return new \Drapor\Networking\Models\Request();
         });

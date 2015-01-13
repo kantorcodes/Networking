@@ -13,9 +13,11 @@ use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Events\Dispatcher;
+use Drapor\Networking\Traits\TimeElapsed;
 
 class Networking
 {
+    use TimeElapsed;
     /**
      * @var string
      */
@@ -48,7 +50,8 @@ class Networking
     public $options = [
         'body'            => false,
         'query'           => false,
-        'allow_redirects' => false
+        'allow_redirects' => false,
+        'auth'            => false
     ];
 
     /** @var $body array * */
@@ -75,13 +78,13 @@ class Networking
 
     function __construct()
     {
-        $this->events = new Dispatcher;
-        //$this->events->listen('networking.response.created', 'Drapor\Networking\Laravel\Handlers\ResponseCreatedHandler@handle');
+        $this->events = app('events');
     }
 
     /**
-     * If you want to encode any body or query parameters
-     * then you call this method to set a new array of options.
+     * If you want to encode any body or query parameters, authenticate or set
+     * redirect settings then you would call this method to set
+     * a new array of options before calling send()
      * @param array $options
      */
     public function setOptions(array $options)
@@ -128,6 +131,7 @@ class Networking
     private function createRequest(array $fields = [], $endpoint, $type = "get")
     {
 
+        $this->setStartedAt();
         $this->setUrl($this->baseUrl . $endpoint);
 
 
@@ -137,6 +141,8 @@ class Networking
         $opts   = $this->configureRequest($fields, $jar);
 
         $request  = $client->createRequest($type, $url, $opts);
+
+        /** $response RequestInterface * */
         $response = $client->send($request);
 
         $this->setRequest($request);
@@ -158,7 +164,7 @@ class Networking
         $req = $guzzle->createRequest('POST', $endpoint);
         $req->setScheme($this->scheme);
         $req->setBody(Stream::factory($body));
-
+        /** $response RequestInterface * */
         $response = $guzzle->send($req);
 
         return $response;
@@ -258,13 +264,16 @@ class Networking
     {
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
-        $this->events->fire('networking.response.created', [[
-            'status_code' => $this->getStatusCode(),
-            'body'        => json_encode($this->getBody()),
-            'url'         => $this->getUrl(),
-            'headers'     => json_encode($this->headers),
-            'cookies'     => json_encode($this->getCookies())
-        ]]);
+        $payload = [
+            'status_code'  => $this->getStatusCode(),
+            'body'         => json_encode($this->getBody()),
+            'url'          => $this->getUrl(),
+            'headers'      => json_encode($this->headers),
+            'cookies'      => json_encode($this->getCookies()),
+            'time_elapsed' => $this->getTimeElapsed()
+        ];
+
+        $this->events->fire('networking.response.created', [$payload]);
 
     }
 
@@ -307,18 +316,11 @@ class Networking
      */
     private function setResponse($response)
     {
+        $this->setEndedAt();
         $this->setBody(json_decode($response->getBody(),true));
         $this->setStatusCode($response->getStatusCode());
         $this->response = $response;
 
-
-        $this->events->fire('response.created', [
-            'status_code' => $this->getStatusCode(),
-            'body'        => $this->getBody(),
-            'url'         => $this->getUrl(),
-            'headers'     => $this->headers,
-            'cookies'     => $this->getCookies()
-        ]);
     }
 
     /**

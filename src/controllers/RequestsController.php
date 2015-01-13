@@ -22,7 +22,7 @@ class RequestsController extends Controller{
     }
 
     public function index(){
-        $requests = $this->request->paginate(20);
+        $requests = $this->request->orderBy('created_at', 'DESC')->paginate(20);
 
         $view['requests'] = $requests;
 
