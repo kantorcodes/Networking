@@ -63,6 +63,9 @@ class Networking
     /** @var $response ResponseInterface * */
     protected $response;
 
+    /** @var $responseType String  * */
+    protected $responseType;
+
     /** @var $request RequestInterface * */
     protected $request;
 
@@ -81,6 +84,16 @@ class Networking
         $this->events = app('events');
     }
 
+    public function getDefaultHeaders(){
+        return  [
+            "Cache-Control" => "no-cache",
+            "Connection"    => "keep-alive",
+            "Accept-Language" => "en;q=1",
+            "Accept-Encoding" => "gzip, deflate",
+            "Proxy-Connection" => "keep-alive"
+        ];
+    }
+
     /**
      * If you want to encode any body or query parameters, authenticate or set
      * redirect settings then you would call this method to set
@@ -97,25 +110,27 @@ class Networking
      * be sent in the http request.
      * @param $fields
      * @param $endpoint
-     * @param $type
+     * @param $method
      * @return array
      */
-    public function send(array $fields, $endpoint, $type)
+    public function send(array $fields, $endpoint, $method)
     {
         try {
-            $this->createRequest($fields, $endpoint, $type);
+            $this->createRequest($fields, $endpoint, $method);
         } catch (RequestException $e) {
             $this->setResponse($e->getResponse());
         }
 
-        $body        = $this->getBody();
-        $status_code = $this->getStatusCode();
-        $cookie      = $this->getCookies();
+        $body         = $this->getBody();
+        $status_code  = $this->getStatusCode();
+        $cookie       = $this->getCookies();
+        $responseType = $this->getResponseType();
 
         $response = [
-            'body' => $body,
-            'status_code' => $status_code,
-            'cookie' => $cookie
+            'body'         => $body,
+            'status_code'  => $status_code,
+            'cookie'       => $cookie,
+            'responseType' => $responseType
         ];
 
         return $response;
@@ -124,11 +139,11 @@ class Networking
     /**
      * @param array  $fields
      * @param        $endpoint
-     * @param string $type
+     * @param string $method
      *
      * @return void
      */
-    private function createRequest(array $fields = [], $endpoint, $type = "get")
+    private function createRequest(array $fields = [], $endpoint, $method = "get")
     {
 
         $this->setStartedAt();
@@ -140,7 +155,7 @@ class Networking
         $url    = $this->getUrl();
         $opts   = $this->configureRequest($fields, $jar);
 
-        $request  = $client->createRequest($type, $url, $opts);
+        $request  = $client->createRequest($method, $url, $opts);
 
         /** $response RequestInterface * */
         $response = $client->send($request);
@@ -264,6 +279,7 @@ class Networking
     {
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
+
         $payload = [
             'status_code'  => $this->getStatusCode(),
             'body'         => json_encode($this->getBody()),
@@ -316,19 +332,44 @@ class Networking
      */
     private function setResponse($response)
     {
+        $status_code = $response->getStatusCode();
+        $is_json = false;
+
+        try{
+            $body            = \GuzzleHttp\json_decode($response->getBody(),true);
+            $is_json         = true;
+        }catch(\InvalidArgumentException $e){
+            $body = ["body" => $response->getBody()->__toString()];
+        }
+
+        if(!(count($body) > 1) && $is_json){
+            $body = [
+                "message" => "No Response Received."
+            ];
+        }
+
         $this->setEndedAt();
-        $this->setBody(json_decode($response->getBody(),true));
-        $this->setStatusCode($response->getStatusCode());
+        $this->setBody($body);
+        $this->setStatusCode($status_code);
+        $this->setResponseType($is_json ? "json" : "html/xml");
         $this->response = $response;
 
     }
 
     /**
-     * @return Dispatcher
+     * @return String
      */
-    private function getDispatcher()
+    public function getResponseType()
     {
-        return $this->events;
+        return $this->responseType;
+    }
+
+    /**
+     * @param String $responseType
+     */
+    public function setResponseType($responseType)
+    {
+        $this->responseType = $responseType;
     }
 
     /**
@@ -361,15 +402,6 @@ class Networking
     private function setBody(array $body)
     {
         $this->body = $body;
-    }
-
-    /**
-     *
-     */
-    private function setDispatcher()
-    {
-        $this->events = new Dispatcher();
-
     }
 
 

@@ -18,10 +18,13 @@ class ResponseCreatedHandler{
      */
     public function handle(array $data){
 
+        if(strlen($data["body"]) >= 2000){
+            $data["body"] =  json_encode(str_replace("\\","",substr($data["body"], 0, 2000)));
+        }
+
         $this->queue->push(function($job) use ($data)
         {
             Request::create($data);
-
             $job->delete();
         });
     }

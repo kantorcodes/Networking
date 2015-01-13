@@ -58,7 +58,7 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
             $body = json_decode($value, true);
             $string = '';
             foreach ($body as $key => $value) {
-                $string .= trim("$key : $value</br>");
+                    $string .= trim("$key : $value</br>");
             }
             return $string;
         }
