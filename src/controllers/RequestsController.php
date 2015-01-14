@@ -48,9 +48,9 @@ class RequestsController extends Controller{
         }
 
         if($request->has("headers") && count($request->get("headers")) >= 1){
-            $this->networking->headers = $request->get("headers");
+            $this->networking->request_headers = $request->get("headers");
         }else{
-            $this->networking->headers = $this->networking->getDefaultHeaders();
+            $this->networking->request_headers = $this->networking->getDefaultHeaders();
         }
 
         if($request->has("body") && count($request->get("body")) >= 1){
