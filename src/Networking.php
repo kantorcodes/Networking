@@ -23,39 +23,30 @@ class Networking
      */
     public $baseUrl;
 
-    /**
-     * @var string
-     */
+    /** @var string $method * */
+    public $method;
+
+    /** @var string  $scheme * */
     public $scheme;
 
-    /**
-     * @var string
-     */
+    /** @var string  $proxy * */
     public $proxy;
 
-    /**
-     * @var array
-     */
+    /** @var array  $auth**/
     public $auth;
 
-    /**
-     * @var array
-     */
-    public $headers;
+    /** @var array  $request_headers **/
+    public $request_headers;
 
 
-    /**
-     * @var array $options
-     */
-    public $options = [
-        'body'            => false,
-        'query'           => false,
-        'allow_redirects' => false,
-        'auth'            => false
-    ];
+    /** @var array $options  * */
+    public $options;
 
-    /** @var $body array * */
-    protected $body;
+    /** @var $response_body array * */
+    protected $response_body;
+
+    /** @var $request_body array * */
+    protected $request_body;
 
     /** @var $status_code Int * */
     protected $status_code;
@@ -66,11 +57,17 @@ class Networking
     /** @var $responseType String  * */
     protected $responseType;
 
+    /** @var $response_headers array * */
+    protected  $response_headers;
+
     /** @var $request RequestInterface * */
     protected $request;
 
     /** @var array $cookies * */
     protected $cookies;
+
+    /** @var CookieJar $jar * */
+    protected $jar;
 
     /** @var string $url * */
     protected $url;
@@ -82,6 +79,19 @@ class Networking
     function __construct()
     {
         $this->events = app('events');
+
+        if(!isset($this->request_headers)){
+            $this->request_headers = $this->getDefaultHeaders();
+        }
+        if(!isset($this->method)){
+            $this->method = "get";
+        }
+        if(!isset($this->baseUrl)){
+            $this->baseUrl = "http://httpbin.org/";
+        }
+        if(!isset($this->options)){
+            $this->options = $this->getDefaultOptions();
+        }
     }
 
     public function getDefaultHeaders(){
@@ -91,6 +101,15 @@ class Networking
             "Accept-Language" => "en;q=1",
             "Accept-Encoding" => "gzip, deflate",
             "Proxy-Connection" => "keep-alive"
+        ];
+    }
+
+    public function getDefaultOptions(){
+        return [
+            'body'            => false,
+            'query'           => false,
+            'allow_redirects' => false,
+            'auth'            => false
         ];
     }
 
@@ -118,10 +137,11 @@ class Networking
         try {
             $this->createRequest($fields, $endpoint, $method);
         } catch (RequestException $e) {
-            $this->setResponse($e->getResponse());
+            //If request fails we recreate the required fields from the error
+            $this->setRequestAndResponse($e->getRequest(),$e->getResponse());
         }
 
-        $body         = $this->getBody();
+        $body         = $this->getResponseBody();
         $status_code  = $this->getStatusCode();
         $cookie       = $this->getCookies();
         $responseType = $this->getResponseType();
@@ -143,26 +163,24 @@ class Networking
      *
      * @return void
      */
-    private function createRequest(array $fields = [], $endpoint, $method = "get")
+    private function createRequest(array $fields = [], $endpoint)
     {
-
         $this->setStartedAt();
         $this->setUrl($this->baseUrl . $endpoint);
+        $this->setRequestBody($fields);
+        $this->setJar();
 
+        $client       = $this->getClient();
+        $url          = $this->getUrl();
+        $opts         = $this->configureRequest($fields);
 
-        $client = $this->getClient();
-        $jar    = $this->getCookieJar();
-        $url    = $this->getUrl();
-        $opts   = $this->configureRequest($fields, $jar);
-
-        $request  = $client->createRequest($method, $url, $opts);
-
-        /** $response RequestInterface * */
+        /** $request RequestInterface * */
+        $request  = $client->createRequest($this->method, $url, $opts);
+        /** $response ResponseInterface * */
         $response = $client->send($request);
 
-        $this->setRequest($request);
-        $this->setResponse($response);
-        $this->setCookies($jar);
+
+        $this->setRequestAndResponse($request, $response);
     }
 
     /**
@@ -191,12 +209,12 @@ class Networking
      *
      * @return array
      */
-    private function configureRequest(array $fields, $jar)
+    private function configureRequest(array $fields)
     {
 
         $opts = [
-            'headers' => $this->headers,
-            'cookies' => $jar
+            'headers' => $this->request_headers,
+            'cookies' => $this->jar
         ];
 
         if (!empty($fields)) {
@@ -243,15 +261,19 @@ class Networking
         return $guzzle;
     }
 
-    private function getCookieJar()
+    private function setJar(){
+        $this->jar =  new CookieJar();
+    }
+
+    private function getJar()
     {
-        return new CookieJar;
+        return $this->jar;
     }
 
     /**
      * @return string
      */
-    private function getUrl()
+    public function getUrl()
     {
         return $this->url;
     }
@@ -267,7 +289,7 @@ class Networking
     /**
      * @return array
      */
-    private function getCookies()
+    public function getCookies()
     {
         return $this->cookies;
     }
@@ -275,22 +297,25 @@ class Networking
     /**
      * @param CookieJar $jar
      */
-    private function setCookies($jar)
+    private function setCookies(CookieJar $jar)
     {
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
 
         $payload = [
-            'status_code'  => $this->getStatusCode(),
-            'body'         => json_encode($this->getBody()),
-            'url'          => $this->getUrl(),
-            'headers'      => json_encode($this->headers),
-            'cookies'      => json_encode($this->getCookies()),
-            'time_elapsed' => $this->getTimeElapsed()
+            'status_code'           => $this->getStatusCode(),
+            'response_body'         => $this->getResponseBody(),
+            'request_body'          => $this->getRequestBody(),
+            'url'                   => $this->getUrl(),
+            'response_headers'      => $this->getResponseHeaders(),
+            'request_headers'       => $this->request_headers,
+            'cookies'               => $this->getCookies(),
+            'time_elapsed'          => $this->getTimeElapsed(),
+            'response_type'         => $this->getResponseType(),
+            'method'                => $this->method
         ];
 
         $this->events->fire('networking.response.created', [$payload]);
-
     }
 
     /**
@@ -312,7 +337,7 @@ class Networking
     /**
      * @param RequestInterface $request
      */
-    private function setRequest($request)
+    private function setRequest(RequestInterface $request)
     {
         $this->request = $request;
     }
@@ -330,17 +355,14 @@ class Networking
      * Set the response & related info from the response.
      * @param ResponseInterface $response
      */
-    private function setResponse($response)
+    private function setResponse(ResponseInterface $response)
     {
-        $status_code = $response->getStatusCode();
         $is_json = false;
-
         try{
-            $body            = \GuzzleHttp\json_decode($response->getBody(),true);
+            $body            = \GuzzleHttp\json_decode(stripslashes($response->getBody()),true);
             $is_json         = true;
         }catch(\InvalidArgumentException $e){
             $body = [$response->getBody()->__toString()];
-
         }
 
         //HTML/XML will always have an output.
@@ -350,12 +372,15 @@ class Networking
             ];
         }
 
+        $status_code      = $response->getStatusCode();
+        $response_headers = $response->getHeaders();
+
         $this->setEndedAt();
-        $this->setBody($body);
+        $this->setResponseBody($body);
+        $this->setResponseHeaders($response_headers);
         $this->setStatusCode($status_code);
         $this->setResponseType($is_json ? "json" : "html/xml");
         $this->response = $response;
-
     }
 
     /**
@@ -377,7 +402,7 @@ class Networking
     /**
      * @return Int
      */
-    private function getStatusCode()
+    public function getStatusCode()
     {
         return $this->status_code;
     }
@@ -393,17 +418,62 @@ class Networking
     /**
      * @return array
      */
-    public function getBody()
+    public function getResponseBody()
     {
-        return $this->body;
+        return $this->response_body;
     }
 
     /**
      * @param array $body
      */
-    private function setBody(array $body)
+    public function setResponseBody(array $body)
     {
-        $this->body = $body;
+        $this->response_body = $body;
+    }
+
+
+    /**
+     * @return array
+     */
+    public function getRequestBody()
+    {
+        return $this->request_body;
+    }
+
+    /**
+     * @param array $body
+     */
+    private function setRequestBody(array $body)
+    {
+        $this->request_body = $body;
+    }
+
+    /**
+     * @return array
+     */
+    public function getResponseHeaders()
+    {
+        return $this->response_headers;
+    }
+
+    /**
+     * @param array $response_headers
+     */
+    public function setResponseHeaders($response_headers)
+    {
+        $this->response_headers = $response_headers;
+    }
+
+
+    /**
+     * @param $request
+     * @param $response
+     */
+    private function setRequestAndResponse(RequestInterface $request,ResponseInterface $response)
+    {
+        $this->setRequest($request);
+        $this->setResponse($response);
+        $this->setCookies($this->getJar());
     }
 
 

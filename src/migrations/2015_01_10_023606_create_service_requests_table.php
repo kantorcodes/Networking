@@ -16,11 +16,15 @@ class CreateServiceRequestsTable extends Migration {
 		Schema::create('service_requests', function(Blueprint $table)
 		{
 			$table->increments('id');
-			$table->text('body');
-			$table->text('headers');
+			$table->text('request_body');
+            $table->text('response_body');
+			$table->text('request_headers');
+            $table->text('response_headers');
 			$table->text('cookies');
 			$table->string('url');
+            $table->string('method');
 			$table->integer('status_code');
+            $table->string('response_type');
             $table->float('time_elapsed',16,8);
 			$table->timestamps();
 		});

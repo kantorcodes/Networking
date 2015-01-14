@@ -1,5 +1,6 @@
 <?php namespace Drapor\Networking\Models;
 use Illuminate\Database\Eloquent\Model as Eloquent;
+use Drapor\Networking\Traits\TypeModifier;
 	/**
 	 * Created by PhpStorm.
 	 * User: michaelkantor
@@ -7,6 +8,9 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
 	 * Time: 9:12 PM
 	 */
 	class Request extends Eloquent {
+
+        use TypeModifier;
+
 		protected $table ='service_requests';
 
 		protected $guarded = [];
@@ -15,14 +19,22 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
 
 
 
-        public function getBodyAttribute( $value)
+        public function getRequestBodyAttribute( $value)
         {
-            return $this->toString($value);
+            return $this->_toString($value);
         }
 
+        public function getResponseBodyAttribute( $value)
+        {
+            return $this->_toString($value);
+        }
 
-        public function getHeadersAttribute($value){
-            return $this->toString($value);
+        public function getRequestHeadersAttribute($value){
+            return $this->_toString($value);
+        }
+
+        public function getResponseHeadersAttribute($value){
+            return $this->_toString($value);
         }
 
         public function getTimeElapsedAttribute($value){
@@ -34,7 +46,7 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
             if(!(count($value) > 1)){
                 return "No Cookies In Response";
             }else{
-                return $this->toString($value);
+                return $this->_toString($value);
             }
         }
 
@@ -49,20 +61,6 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
                 return "<span class='label label-default'>{$value}</span>";
             }
         }
-        /**
-         * @param $value
-         * @return string
-         */
-        private function toString($value)
-        {
 
-            $body = \GuzzleHttp\json_decode($value, true);
-            $string = '';
-            foreach ($body as $key => $value) {
-                    $output  = strip_tags(trim("{$key} : {$value}"));
-                    $string .= "{$output}</br>";
-            }
-            return $string;
-        }
 
     }

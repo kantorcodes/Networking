@@ -21,9 +21,9 @@
                 <tr>
                 <td>{{$request->url}}</td>
                 <td>{{$request->status_code}}</td>
-                <td>{{$request->body}}</td>
+                <td>{{$request->response_body}}</td>
                 <td>{{$request->cookies}}</td>
-                <td>{{$request->headers}}</td>
+                <td>{{$request->response_headers}}</td>
                 <td>{{$request->time_elapsed }}</td>
                 </tr>
              @endforeach
@@ -32,4 +32,5 @@
 
        </tbody>
 </table>
+  {{ $requests->links()}}
 @stop
