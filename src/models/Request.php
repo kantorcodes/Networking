@@ -59,7 +59,8 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
             $body = \GuzzleHttp\json_decode($value, true);
             $string = '';
             foreach ($body as $key => $value) {
-                    $string .= trim("$key : $value</br>");
+                    $output  = strip_tags(trim("{$key} : {$value}"));
+                    $string .= "{$output}</br>";
             }
             return $string;
         }

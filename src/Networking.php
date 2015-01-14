@@ -344,7 +344,7 @@ class Networking
         }
 
         //HTML/XML will always have an output.
-        if(!(count($body) > 1) && $is_json){
+        if((count($body) < 1) && $is_json){
             $body = [
                 "message" => "No Response Received."
             ];
