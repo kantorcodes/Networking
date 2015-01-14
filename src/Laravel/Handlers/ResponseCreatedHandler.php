@@ -22,7 +22,7 @@ class ResponseCreatedHandler{
         if(strlen($data["body"]) >= 2000){
             $shrunk            = str_replace("[","",$data["body"]);
             $shrunk            = str_replace("]","",$shrunk);
-            $data["body"]      = stripslashes(substr($shrunk, 0, 100));
+            $data["body"]      = stripslashes(substr($shrunk, 0, 2000));
         }
 
         $this->queue->push(function($job) use ($data)
