@@ -22,6 +22,7 @@
     <div style="margin-top: 80px"></div>
         <div class="row">
             <div class="col-lg-12">
+
                 @yield('content')
             </div>
     </div>
