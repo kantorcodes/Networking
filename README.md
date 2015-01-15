@@ -1,4 +1,4 @@
-<h1> Easy Networking For PHP </h1>
+<h1> Easy Networking For PHP :) </h1>
 
 
      use Drapor\Networking\Networking;
