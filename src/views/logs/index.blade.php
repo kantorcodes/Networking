@@ -7,6 +7,7 @@
       <tr class="text-center">
          <th>Endpoint Url</th>
          <th>Response Status Code</th>
+         <th>Request  Body</th>
          <th>Response Body</th>
          <th>Response Cookies</th>
          <th>Response Headers</th>
@@ -21,6 +22,7 @@
                 <tr>
                 <td>{{$request->url}}</td>
                 <td>{{$request->status_code}}</td>
+                <td>{{ $request->request_body }}</td>
                 <td>{{$request->response_body}}</td>
                 <td>{{$request->cookies}}</td>
                 <td>{{$request->response_headers}}</td>
