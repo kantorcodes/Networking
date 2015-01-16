@@ -84,6 +84,7 @@ class Networking
             $this->request_headers = $this->getDefaultHeaders();
             if(isset($this->method) && $this->method = "post"){
                 //Assume that a post request is submitting a standard urlencoded request
+
                 $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
                 $this->options["body"]                 = true;
             }
