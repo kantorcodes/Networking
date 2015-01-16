@@ -38,7 +38,6 @@ class Networking
     /** @var array  $request_headers **/
     public $request_headers;
 
-
     /** @var array $options  * */
     public $options;
 
@@ -79,25 +78,6 @@ class Networking
     function __construct()
     {
         $this->events = app('events');
-
-        if(!isset($this->request_headers)){
-            $this->request_headers = $this->getDefaultHeaders();
-            if(isset($this->method) && $this->method = "post"){
-                //Assume that a post request is submitting a standard urlencoded request
-
-                $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
-                $this->options["body"]                 = true;
-            }
-        }
-        if(!isset($this->method)){
-            $this->method = "get";
-        }
-        if(!isset($this->baseUrl)){
-            $this->baseUrl = "http://httpbin.org/";
-        }
-        if(!isset($this->options)){
-            $this->options = $this->getDefaultOptions();
-        }
     }
 
     public function getDefaultHeaders(){
@@ -165,7 +145,6 @@ class Networking
     /**
      * @param array  $fields
      * @param        $endpoint
-     * @param string $method
      *
      * @return void
      */
@@ -178,7 +157,10 @@ class Networking
 
         $client       = $this->getClient();
         $url          = $this->getUrl();
-        $opts         = $this->configureRequest($fields);
+        $opts         = $this->configureOptions($fields);
+
+        /* Do final setup before sending the request..*/
+        $this->configureRequest();
 
         /** $request RequestInterface * */
         $request  = $client->createRequest($this->method, $url, $opts);
@@ -211,11 +193,10 @@ class Networking
 
     /**
      * @param array $fields
-     * @param       $jar
      *
      * @return array
      */
-    private function configureRequest(array $fields)
+    private function configureOptions(array $fields)
     {
 
         $opts = [
@@ -243,6 +224,30 @@ class Networking
         return $opts;
     }
 
+    /**
+     * Check for empty properties and set some sensible defaults
+     *
+     */
+    private function configureRequest(){
+        if(!isset($this->request_headers)){
+            $this->request_headers = $this->getDefaultHeaders();
+            if(isset($this->method) && $this->method = "post"){
+                //Assume that a post request is submitting a standard urlencoded request
+
+                $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
+                $this->options["body"]                 = true;
+            }
+        }
+        if(!isset($this->method)){
+            $this->method = "get";
+        }
+        if(!isset($this->baseUrl)){
+            $this->baseUrl = "http://httpbin.org/";
+        }
+        if(!isset($this->options)){
+            $this->options = $this->getDefaultOptions();
+        }
+    }
 
     /**
      * @return Client
