@@ -155,12 +155,11 @@ class Networking
         $this->setRequestBody($fields);
         $this->setJar();
 
+        /* Do final setup before sending the request..*/
+        $this->configureRequest();
         $client       = $this->getClient();
         $url          = $this->getUrl();
         $opts         = $this->configureOptions($fields);
-
-        /* Do final setup before sending the request..*/
-        $this->configureRequest();
 
         /** $request RequestInterface * */
         $request  = $client->createRequest($this->method, $url, $opts);
@@ -229,14 +228,8 @@ class Networking
      *
      */
     private function configureRequest(){
-        if(!isset($this->request_headers)){
-            $this->request_headers = $this->getDefaultHeaders();
-            if(isset($this->method) && $this->method = "post"){
-                //Assume that a post request is submitting a standard urlencoded request
-
-                $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
-                $this->options["body"]                 = true;
-            }
+        if(!isset($this->options)){
+            $this->options = $this->getDefaultOptions();
         }
         if(!isset($this->method)){
             $this->method = "get";
@@ -244,8 +237,14 @@ class Networking
         if(!isset($this->baseUrl)){
             $this->baseUrl = "http://httpbin.org/";
         }
-        if(!isset($this->options)){
-            $this->options = $this->getDefaultOptions();
+        if(!isset($this->request_headers)){
+            $this->request_headers = $this->getDefaultHeaders();
+            if(isset($this->method) && $this->method = "post" && $this->options["query"] == false){
+                //Assume that a post request is submitting a standard urlencoded request
+
+                $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
+                $this->options["body"]                 = true;
+            }
         }
     }
 
