@@ -78,6 +78,7 @@ class Networking
     function __construct()
     {
         $this->events = app('events');
+        $this->setOptions($this->getDefaultOptions());
     }
 
     public function getDefaultHeaders(){
@@ -120,8 +121,12 @@ class Networking
      */
     public function send(array $fields, $endpoint, $method)
     {
+        $this->method = $method;
+        $this->setUrl($this->baseUrl . $endpoint);
+        $this->setRequestBody($fields);
+
         try {
-            $this->createRequest($fields, $endpoint, $method);
+            $this->createRequest();
         } catch (RequestException $e) {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(),$e->getResponse());
@@ -145,27 +150,25 @@ class Networking
     /**
      * @param array  $fields
      * @param        $endpoint
-     *
+     * @param        $method
      * @return void
      */
-    private function createRequest(array $fields = [], $endpoint)
+    private function createRequest()
     {
         $this->setStartedAt();
-        $this->setUrl($this->baseUrl . $endpoint);
-        $this->setRequestBody($fields);
         $this->setJar();
 
         /* Do final setup before sending the request..*/
         $this->configureRequest();
         $client       = $this->getClient();
         $url          = $this->getUrl();
-        $opts         = $this->configureOptions($fields);
+        $opts         = $this->configureOptions($this->getRequestBody());
+        $method       = $this->method;
 
         /** $request RequestInterface * */
-        $request  = $client->createRequest($this->method, $url, $opts);
+        $request  = $client->createRequest($method, $url, $opts);
         /** $response ResponseInterface * */
         $response = $client->send($request);
-
 
         $this->setRequestAndResponse($request, $response);
     }
@@ -228,9 +231,6 @@ class Networking
      *
      */
     private function configureRequest(){
-        if(!isset($this->options)){
-            $this->options = $this->getDefaultOptions();
-        }
         if(!isset($this->method)){
             $this->method = "get";
         }
@@ -239,7 +239,7 @@ class Networking
         }
         if(!isset($this->request_headers)){
             $this->request_headers = $this->getDefaultHeaders();
-            if(isset($this->method) && $this->method = "post" && $this->options["query"] == false){
+            if(isset($this->method) && $this->method = "post" && $this->options["query"] == false && isset($this->request_body)){
                 //Assume that a post request is submitting a standard urlencoded request
 
                 $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
