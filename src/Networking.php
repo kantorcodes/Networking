@@ -234,9 +234,9 @@ class Networking
             if($config['allow_redirects']){
                 $opts['allow_redirects'] = [
                     'max'       => 10,
-                    'strict'    => true,
+                    'strict'    => false,
                     'referer'   => true,
-                    'protocols' => [$this->scheme]
+                    'protocols' => ["http","https"]
                 ];
             }
         }
