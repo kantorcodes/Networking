@@ -178,6 +178,8 @@ class Networking
         /** $response ResponseInterface * */
         $response = $client->send($request);
 
+        $this->request_headers = $request->getHeaders();
+
         $this->setRequestAndResponse($request, $response);
     }
 
