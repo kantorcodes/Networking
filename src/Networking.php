@@ -178,8 +178,6 @@ class Networking
         /** $response ResponseInterface * */
         $response = $client->send($request);
 
-        $this->request_headers = $request->getHeaders();
-
         $this->setRequestAndResponse($request, $response);
     }
 
@@ -492,6 +490,8 @@ class Networking
     private function setRequestAndResponse(RequestInterface $request,ResponseInterface $response)
     {
         $this->setRequest($request);
+        $headers = $request->getHeaders();
+        $this->request_headers = isset($headers) ? $headers : ["headers invalid" => ":("];
         $this->setResponse($response);
         $this->setCookies($this->getJar());
     }
