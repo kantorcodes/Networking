@@ -14,6 +14,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Events\Dispatcher;
 use Drapor\Networking\Traits\TimeElapsed;
+use Illuminate\Queue\Queue;
 
 class Networking
 {
@@ -40,6 +41,9 @@ class Networking
 
     /** @var array $options  * */
     public $options;
+
+    /** @var bool $queued  * */
+    public $queued;
 
     /** @var $response_body array * */
     protected $response_body;
@@ -125,32 +129,36 @@ class Networking
         $this->setUrl($this->baseUrl . $endpoint);
         $this->setRequestBody($fields);
 
-        try {
-            $this->createRequest();
-        } catch (RequestException $e) {
-            //If request fails we recreate the required fields from the error
-            $this->setRequestAndResponse($e->getRequest(),$e->getResponse());
+        if(!isset($this->queued)){
+            $this->queued = false;
         }
 
-        $body         = $this->getResponseBody();
-        $status_code  = $this->getStatusCode();
-        $cookie       = $this->getCookies();
-        $responseType = $this->getResponseType();
+        $sha          = sha1(serialize($fields) . time());
+        $rel          = "/request/{$sha}";
+
+        $this->syncRequest($body, $status_code, $cookie, $responseType);
+
+        /*
+          TODO : Implement this...
+           if(!$this->queued){
+             $this->syncRequest($body, $status_code, $cookie, $responseType);
+           }else{
+             $this->asyncRequest($body, $status_code, $cookie, $responseType);
+            }
+         */
 
         $response = [
             'body'         => $body,
             'status_code'  => $status_code,
             'cookie'       => $cookie,
-            'responseType' => $responseType
+            'responseType' => $responseType,
+            'rel'          => $rel
         ];
 
         return $response;
     }
 
     /**
-     * @param array  $fields
-     * @param        $endpoint
-     * @param        $method
      * @return void
      */
     private function createRequest()
@@ -484,6 +492,47 @@ class Networking
         $this->setRequest($request);
         $this->setResponse($response);
         $this->setCookies($this->getJar());
+    }
+
+    /**
+     * @param $body
+     * @param $status_code
+     * @param $cookie
+     * @param $responseType
+     */
+    private function syncRequest(&$body, &$status_code, &$cookie, &$responseType)
+    {
+        try {
+            $this->createRequest();
+        } catch (RequestException $e) {
+            //If request fails we recreate the required fields from the error
+            $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
+        }
+        $body = $this->getResponseBody();
+        $status_code = $this->getStatusCode();
+        $cookie = $this->getCookies();
+        $responseType = $this->getResponseType();
+    }
+
+    /**
+     * @param $body
+     * @param $status_code
+     * @param $cookie
+     * @param $responseType
+     */
+    private function asyncRequest(&$body, &$status_code, &$cookie, &$responseType)
+    {
+        $body = "request successfully enqueued";
+        $status_code = 201;
+        $cookie = [];
+        $responseType = "json";
+
+        $this->events->fire(['response.bus'], [
+            'client' => $this->getClient(),
+            'url' => $this->getUrl(),
+            'options' => $this->configureOptions($this->getRequestBody()),
+            'method' => $this->method
+        ]);
     }
 
 
