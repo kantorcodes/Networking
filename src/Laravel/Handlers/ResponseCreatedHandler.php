@@ -6,7 +6,9 @@
  * Time: 9:59 PM
  */
 use Drapor\Networking\Models\Request;
+use Exception;
 use Illuminate\Queue\Queue;
+use Illuminate\Log\Writer as Log;
 class ResponseCreatedHandler{
 
     /**
@@ -37,25 +39,31 @@ class ResponseCreatedHandler{
 
         $this->queue->push(function($job) use ($networking, $stripped)
         {
-            if($stripped){
-                $networking["response_body"] = unserialize($networking["response_body"]);
+            try{
+                if($stripped){
+                    $networking["response_body"] = unserialize($networking["response_body"]);
+                }
+                $data = [
+                    'status_code'           => $networking["status_code"],
+                    'response_body'         => json_encode($networking["response_body"]),
+                    'request_body'          => json_encode($networking["request_body"]),
+                    'url'                   => $networking["url"],
+                    'response_headers'      => json_encode($networking["response_headers"]),
+                    'request_headers'       => json_encode($networking["request_headers"]),
+                    'cookies'               => json_encode($networking["cookies"]),
+                    'time_elapsed'          => $networking["time_elapsed"],
+                    'response_type'         => $networking["response_type"],
+                    'method'                => $networking["method"]
+                ];
+                Request::create($data);
+                $job->delete();
+            }catch(Exception $e){
+                /**
+                 * @param Log $log
+                 */
+                $log = app('log');
+                $log->info($e->getMessage());
             }
-
-            $data = [
-                'status_code'           => $networking["status_code"],
-                'response_body'         => json_encode($networking["response_body"]),
-                'request_body'          => json_encode($networking["request_body"]),
-                'url'                   => $networking["url"],
-                'response_headers'      => json_encode($networking["response_headers"]),
-                'request_headers'       => json_encode($networking["request_headers"]),
-                'cookies'               => json_encode($networking["cookies"]),
-                'time_elapsed'          => $networking["time_elapsed"],
-                'response_type'         => $networking["response_type"],
-                'method'                => $networking["method"]
-            ];
-
-            Request::create($data);
-            $job->delete();
         });
     }
 
