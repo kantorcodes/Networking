@@ -7,7 +7,6 @@
  */
 use Drapor\Networking\Models\Request;
 use Illuminate\Queue\Queue;
-use Drapor\Networking\Networking;
 class ResponseCreatedHandler{
 
     /**
@@ -28,6 +27,7 @@ class ResponseCreatedHandler{
     public function handle(array $networking){
 
         $stripped  = false;
+        dd($networking);
 
         if($networking["response_type"] == "html/xml"){
             if(strlen($body = $networking["response_body"][0]) >= 2000){
