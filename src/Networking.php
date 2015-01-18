@@ -286,7 +286,7 @@ class Networking
         if(!isset($this->request_cookies)){
             $jar = new CookieJar();
         }else{
-            $jar = new CookieJar(false,[$this->request_cookies]);
+            $jar = new CookieJar(false,$this->request_cookies);
         }
         $this->jar =  $jar;
     }
