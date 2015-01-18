@@ -39,6 +39,9 @@ class Networking
     /** @var array  $request_headers **/
     public $request_headers;
 
+    /** @var array  $request_cookies **/
+    public $request_cookies;
+
     /** @var array $options  * */
     public $options;
 
@@ -280,7 +283,12 @@ class Networking
     }
 
     private function setJar(){
-        $this->jar =  new CookieJar();
+        if(!isset($this->request_cookies)){
+            $jar = new CookieJar();
+        }else{
+            $jar = new CookieJar(false,[$this->request_cookies]);
+        }
+        $this->jar =  $jar;
     }
 
     private function getJar()
