@@ -191,7 +191,8 @@ class Networking
         $this->finalize($client, $url, $opts, $method);
 
         $req = $client->createRequest($method, $url,$opts);
-        $req->setBody(Stream::factory($this->getRequestBody()));
+        $body = json_encode($this->getRequestBody());
+        $req->setBody(Stream::factory($body));
         /** $response RequestInterface * */
         $response = $client->send($req);
 
