@@ -11,6 +11,7 @@
          <th>Response Body</th>
          <th>Response Cookies</th>
          <th>Response Headers</th>
+         <th>Request  Headers</th>
          <th>Time Elapsed</th>
          </tr>
          </thead>
@@ -26,6 +27,7 @@
                 <td>{{$request->response_body}}</td>
                 <td>{{$request->cookies}}</td>
                 <td>{{$request->response_headers}}</td>
+                <td>{{$request->request_headers}}</td>
                 <td>{{$request->time_elapsed }}</td>
                 </tr>
              @endforeach

@@ -37,7 +37,10 @@ class ResponseCreatedHandler{
             }
         }
 
-        $this->queue->push(function($job) use ($networking, $stripped)
+        $this->queue->push(/**
+         * @param $job
+         */
+        function($job) use ($networking, $stripped)
         {
             try{
                 if($stripped){
@@ -55,7 +58,10 @@ class ResponseCreatedHandler{
                     'response_type'         => $networking["response_type"],
                     'method'                => $networking["method"]
                 ];
+
+                /** @var Request $req */
                 Request::create($data);
+
                 $job->delete();
             }catch(Exception $e){
                 /**

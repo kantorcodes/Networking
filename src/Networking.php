@@ -168,13 +168,8 @@ class Networking
     {
         $this->setStartedAt();
         $this->setJar();
-
-        /* Do final setup before sending the request..*/
-        $this->configureRequest();
-        $client       = $this->getClient();
-        $url          = $this->getUrl();
-        $opts         = $this->configureOptions($this->getRequestBody());
-        $method       = $this->method;
+        /** @var Client $client */
+        $this->finalize($client, $url, $opts, $method);
 
         /** $request RequestInterface * */
         $request  = $client->createRequest($method, $url, $opts);
@@ -185,21 +180,21 @@ class Networking
     }
 
     /**
-     * @param $fields
-     * @param $endpoint
+     *
      * @return \GuzzleHttp\Message\ResponseInterface
      */
-    public function createStreamRequest(array $fields, $endpoint)
+    public function createStreamRequest()
     {
-        $body = json_encode($fields);
+        $this->setStartedAt();
+        $this->setJar();
+        /** @var Client $client */
+        $this->finalize($client, $url, $opts, $method);
 
-        $guzzle = $this->getClient();
-
-        $req = $guzzle->createRequest('POST', $endpoint);
+        $req = $client->createRequest($method, $url,$opts);
         $req->setScheme($this->scheme);
-        $req->setBody(Stream::factory($body));
+        $req->setBody(Stream::factory($this->getRequestBody()));
         /** $response RequestInterface * */
-        $response = $guzzle->send($req);
+        $response = $client->send($req);
 
         return $response;
     }
@@ -219,7 +214,8 @@ class Networking
 
         if (!empty($fields)) {
             $config = $this->getOptions();
-            if ($config['body']) {
+            //If the request is not a stream request then set the body.
+            if ($config['body'] && $this->request_headers["Content-Type"] != "multipart/form-data") {
                 $opts['body'] = $fields;
             }
             if ($config['query']) {
@@ -513,7 +509,12 @@ class Networking
     private function syncRequest(&$body, &$status_code, &$cookie, &$responseType)
     {
         try {
-            $this->createRequest();
+            if(!$this->request_headers["Content-Type"] != "multipart/form-data"){
+                $this->createRequest();
+            }else{
+                $this->createStreamRequest();
+            }
+
         } catch (RequestException $e) {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
@@ -543,6 +544,22 @@ class Networking
             'options' => $this->configureOptions($this->getRequestBody()),
             'method' => $this->method
         ]);
+    }
+
+    /**
+     * @param Client $client
+     * @param string $url
+     * @param array $opts
+     * @param string $method
+     */
+    private function finalize(&$client, &$url, &$opts, &$method)
+    {
+        /* Do final setup before sending the request..*/
+        $this->configureRequest();
+        $client = $this->getClient();
+        $url    = $this->getUrl();
+        $opts   = $this->configureOptions($this->getRequestBody());
+        $method = $this->method;
     }
 
 
