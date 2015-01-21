@@ -567,11 +567,14 @@ class Networking
      */
     private function isMultiPart()
     {
-        if (isset($this->request_headers["Content-Type"]) && $this->request_headers["Content-Type"] != "multipart/form-data") {
-            return false;
-        } else {
-            return true;
+        if (array_key_exists('Content-Type',$this->request_headers)){
+            if($this->request_headers["Content-Type"] != "multipart/form-data") {
+                return false;
+            }else{
+                return true;
+            }
         }
+        return false;
     }
 
 
