@@ -214,7 +214,7 @@ class Networking
         if (!empty($fields)) {
             $config = $this->getOptions();
             //If the request is not a stream request then set the body.
-            if ($config['body'] && $this->request_headers["Content-Type"] != "multipart/form-data") {
+            if ($config['body'] && !$this->isMultiPart()) {
                 $opts['body'] = $fields;
             }
             if ($config['query']) {
@@ -508,7 +508,7 @@ class Networking
     private function syncRequest(&$body, &$status_code, &$cookie, &$responseType)
     {
         try {
-            if(!$this->request_headers["Content-Type"] != "multipart/form-data"){
+            if(!$this->isMultiPart()){
                 $this->createRequest();
             }else{
                 $this->createStreamRequest();
@@ -559,6 +559,19 @@ class Networking
         $url    = $this->getUrl();
         $opts   = $this->configureOptions($this->getRequestBody());
         $method = $this->method;
+    }
+
+    /**
+     *
+     * @return bool
+     */
+    private function isMultiPart()
+    {
+        if (isset($this->request_headers["Content-Type"]) && $this->request_headers["Content-Type"] != "multipart/form-data") {
+            return false;
+        } else {
+            return true;
+        }
     }
 
 
