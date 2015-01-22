@@ -39,7 +39,7 @@ class ResponseCreatedHandler{
          *   }
          * }
          */
-        if ($networking["multi"]) {
+        if (!$networking["multi"]) {
 
             $stripped = false;
             if ($networking["response_type"] == "html/xml") {
