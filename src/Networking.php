@@ -215,7 +215,7 @@ class Networking
         if (!empty($fields)) {
             $config = $this->getOptions();
             //If the request is not a stream request then set the body.
-            if ($config['body'] && !$this->isMultiPart()) {
+            if ($config['body']) {
                 $opts['body'] = $fields;
             }
             if ($config['query']) {
@@ -509,12 +509,7 @@ class Networking
     private function syncRequest(&$body, &$status_code, &$cookie, &$responseType)
     {
         try {
-            if(!$this->isMultiPart()){
-                $this->createRequest();
-            }else{
-                $this->createStreamRequest();
-            }
-
+            $this->createRequest();
         } catch (RequestException $e) {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
