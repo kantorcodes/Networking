@@ -9,6 +9,8 @@ use Drapor\Networking\Models\Request;
 use Exception;
 use Illuminate\Queue\Queue;
 use Illuminate\Log\Writer as Log;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
 class ResponseCreatedHandler{
 
     /**
@@ -28,6 +30,15 @@ class ResponseCreatedHandler{
      */
     public function handle(array $networking){
 
+        //if request is multi part
+        //remove anything that isn't scalar or array
+        if($networking["multi"]){
+            foreach($networking as $key => $value){
+              if(! is_scalar($value) || is_array($value)){
+                  unset($networking[$key]);
+              }
+            }
+        }
         $stripped  = false;
 
         if($networking["response_type"] == "html/xml"){

@@ -334,7 +334,8 @@ class Networking
             'cookies'               => $this->getCookies(),
             'time_elapsed'          => $this->getTimeElapsed(),
             'response_type'         => $this->getResponseType(),
-            'method'                => $this->method
+            'method'                => $this->method,
+            'multi'                 => $this->isMultiPart()
         ];
 
         $this->events->fire('networking.response.created', [$payload]);
