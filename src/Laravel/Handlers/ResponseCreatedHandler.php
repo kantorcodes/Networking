@@ -28,64 +28,67 @@ class ResponseCreatedHandler{
      * if they choose to change what happens with a response.
      * @param array $networking
      */
-    public function handle(array $networking){
+    public function handle(array $networking)
+    {
 
-        //if request is multi part
-        //remove anything that isn't scalar or array
-        if($networking["multi"]){
-            foreach($networking as $key => $value){
-              if(!is_scalar($value) || !is_array($value)){
-                  unset($networking[$key]);
-              }elseif(is_string($value) && strlen($value) >= 2000){
-                  unset($networking[$key]);
-              }
-            }
-        }
-        $stripped  = false;
-
-        if($networking["response_type"] == "html/xml"){
-            if(strlen($body = $networking["response_body"][0]) >= 2000){
-                $stripped = true;
-                $networking["response_body"] = preg_replace('/\s+/', '',  $networking["response_body"][0]);
-                $networking["response_body"] = serialize(stripslashes(trim(mb_substr($body,0,2000))));
-            }
-        }
-
-        $this->queue->push(
         /**
-         * @param $job
+         * TODO: Implement a way to remove files from the queue and still handle multi-part requests.
+         * foreach ($networking as $key => $value) {
+         * if ($this->isFile()) {
+         *      unset($networking[$key]);
+         *   }
+         * }
          */
-        function($job) use ($networking, $stripped)
-        {
-            try{
-                if($stripped){
-                    $networking["response_body"] = unserialize($networking["response_body"]);
+        if ($networking["multi"]) {
+
+            $stripped = false;
+            if ($networking["response_type"] == "html/xml") {
+                if (strlen($body = $networking["response_body"][0]) >= 2000) {
+                    $stripped = true;
+                    $networking["response_body"] = preg_replace('/\s+/', '', $networking["response_body"][0]);
+                    $networking["response_body"] = serialize(stripslashes(trim(mb_substr($body, 0, 2000))));
                 }
-                $data = [
-                    'status_code'           => $networking["status_code"],
-                    'response_body'         => json_encode($networking["response_body"]),
-                    'request_body'          => json_encode($networking["request_body"]),
-                    'url'                   => $networking["url"],
-                    'response_headers'      => json_encode($networking["response_headers"]),
-                    'request_headers'       => json_encode($networking["request_headers"]),
-                    'cookies'               => json_encode($networking["cookies"]),
-                    'time_elapsed'          => $networking["time_elapsed"],
-                    'response_type'         => $networking["response_type"],
-                    'method'                => $networking["method"]
-                ];
-
-                /** @var Request $req */
-                Request::create($data);
-
-                $job->delete();
-            }catch(Exception $e){
-                /**
-                 * @param Log $log
-                 */
-                $log = app('log');
-                $log->info($e->getMessage());
             }
-        });
+            $this->queue->push(
+            /**
+             * @param $job
+             */
+                function ($job) use ($networking, $stripped) {
+
+                    if ($job->attempts() > 3) {
+                        $job->bury();
+                    }
+
+                    try {
+                        if ($stripped) {
+                            $networking["response_body"] = unserialize($networking["response_body"]);
+                        }
+                        $data = [
+                            'status_code' => $networking["status_code"],
+                            'response_body' => json_encode($networking["response_body"]),
+                            'request_body' => json_encode($networking["request_body"]),
+                            'url' => $networking["url"],
+                            'response_headers' => json_encode($networking["response_headers"]),
+                            'request_headers' => json_encode($networking["request_headers"]),
+                            'cookies' => json_encode($networking["cookies"]),
+                            'time_elapsed' => $networking["time_elapsed"],
+                            'response_type' => $networking["response_type"],
+                            'method' => $networking["method"]
+                        ];
+
+                        /** @var Request $req */
+                        Request::create($data);
+
+                        $job->delete();
+                    } catch (Exception $e) {
+                        /**
+                         * @param Log $log
+                         */
+                        $log = app('log');
+                        $log->info($e->getMessage());
+                    }
+                });
+        }
     }
 
 
