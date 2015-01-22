@@ -34,7 +34,9 @@ class ResponseCreatedHandler{
         //remove anything that isn't scalar or array
         if($networking["multi"]){
             foreach($networking as $key => $value){
-              if(! is_scalar($value) || is_array($value)){
+              if(!is_scalar($value) || !is_array($value)){
+                  unset($networking[$key]);
+              }elseif(is_string($value) && strlen($value) >= 2000){
                   unset($networking[$key]);
               }
             }
@@ -49,7 +51,8 @@ class ResponseCreatedHandler{
             }
         }
 
-        $this->queue->push(/**
+        $this->queue->push(
+        /**
          * @param $job
          */
         function($job) use ($networking, $stripped)
