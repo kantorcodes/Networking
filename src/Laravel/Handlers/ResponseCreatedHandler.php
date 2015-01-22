@@ -33,6 +33,7 @@ class ResponseCreatedHandler{
         if($networking["response_type"] == "html/xml"){
             if(strlen($body = $networking["response_body"][0]) >= 2000){
                 $stripped = true;
+                $networking["response_body"] = preg_replace('/\s+/', '',  $networking["response_body"]);
                 $networking["response_body"] = serialize(stripslashes(trim(mb_substr($body,0,2000))));
             }
         }
