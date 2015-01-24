@@ -1,5 +1,7 @@
 <?php namespace Drapor\Networking;
 
+use Drapor\Networking\Commands\NetworkingMigrateCommand;
+use Drapor\Networking\Commands\PackageMigrationCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NetworkingServiceProvider extends ServiceProvider {
@@ -32,6 +34,9 @@ class NetworkingServiceProvider extends ServiceProvider {
 	public function register()
 	{
 		$this->app->register('Drapor\Networking\Laravel\ServiceProviders\EventHandlerProvider');
+
+        $this->registerCommands();
+
         $this->registerModels();
 	}
 
@@ -55,5 +60,15 @@ class NetworkingServiceProvider extends ServiceProvider {
             return new \Drapor\Networking\Models\Request();
         });
 
+    }
+
+    private function registerCommands()
+    {
+        $this->app->bind('networking::command.networking.migrate', function () {
+            return new NetworkingMigrateCommand();
+        });
+        $this->commands([
+            'networking::command.networking.migrate'
+        ]);
     }
 }
