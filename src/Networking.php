@@ -12,6 +12,7 @@ use GuzzleHttp\Message\ResponseInterface;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Utils;
 use Illuminate\Events\Dispatcher;
 use Drapor\Networking\Traits\TimeElapsed;
 use Illuminate\Queue\Queue;
@@ -382,8 +383,8 @@ class Networking
     {
         $is_json = false;
         try{
-            $body            = \GuzzleHttp\json_decode(stripslashes($response->getBody()),true);
-            $is_json         = true;
+            $body             = Utils::jsonDecode(stripslashes($response->getBody()),true);
+            $is_json          = true;
         }catch(\InvalidArgumentException $e){
             $body = [$response->getBody()->__toString()];
         }
