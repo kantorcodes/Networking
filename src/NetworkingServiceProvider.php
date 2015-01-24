@@ -1,7 +1,6 @@
 <?php namespace Drapor\Networking;
 
 use Drapor\Networking\Commands\NetworkingMigrateCommand;
-use Drapor\Networking\Commands\PackageMigrationCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NetworkingServiceProvider extends ServiceProvider {
