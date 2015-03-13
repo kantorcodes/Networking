@@ -381,9 +381,9 @@ class Networking
      */
     private function setResponse(ResponseInterface $response)
     {
-        $is_json = false;
+           $is_json = false;
         try{
-            $body             = Utils::jsonDecode(stripslashes($response->getBody()),true);
+            $body             = json_decode($response->getBody(),true);
             $is_json          = true;
         }catch(\InvalidArgumentException $e){
             $body = [$response->getBody()->__toString()];
