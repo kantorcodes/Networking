@@ -566,7 +566,7 @@ class Networking
     private function isMultiPart()
     {
         if (array_key_exists('Content-Type',$this->request_headers)){
-            if(strpos($this->request_headers["Content-Type"],"multipart/form-data") !== false) {
+            if(strpos($this->request_headers["Content-Type"],"multipart/form-data") == false) {
                 return false;
             }else{
                 return true;
