@@ -85,7 +85,9 @@ class Networking
 
     function __construct()
     {
-        $this->events = app('events');
+        if(function_exists('app')){
+            $this->events = app('events');
+        }
         $this->setOptions($this->getDefaultOptions());
     }
 
@@ -325,21 +327,24 @@ class Networking
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
 
-        $payload = [
-            'status_code'           => $this->getStatusCode(),
-            'response_body'         => $this->getResponseBody(),
-            'request_body'          => $this->getRequestBody(),
-            'url'                   => $this->getUrl(),
-            'response_headers'      => $this->getResponseHeaders(),
-            'request_headers'       => $this->request_headers,
-            'cookies'               => $this->getCookies(),
-            'time_elapsed'          => $this->getTimeElapsed(),
-            'response_type'         => $this->getResponseType(),
-            'method'                => $this->method,
-            'multi'                 => $this->isMultiPart()
-        ];
-
-        $this->events->fire('networking.response.created', [$payload]);
+       if($this->events != null){
+           
+            $payload = [
+                'status_code'           => $this->getStatusCode(),
+                'response_body'         => $this->getResponseBody(),
+                'request_body'          => $this->getRequestBody(),
+                'url'                   => $this->getUrl(),
+                'response_headers'      => $this->getResponseHeaders(),
+                'request_headers'       => $this->request_headers,
+                'cookies'               => $this->getCookies(),
+                'time_elapsed'          => $this->getTimeElapsed(),
+                'response_type'         => $this->getResponseType(),
+                'method'                => $this->method,
+                'multi'                 => $this->isMultiPart()
+            ];
+        
+         $this->events->fire('networking.response.created', [$payload]);
+       }
     }
 
     /**
