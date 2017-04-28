@@ -6,15 +6,16 @@
  * Date: 12/29/14
  * Time: 2:57 PM
  */
-use GuzzleHttp\Client;
-use GuzzleHttp\Stream\Stream;
-use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Utils;
-use Illuminate\Events\Dispatcher;
 use Drapor\Networking\Traits\TimeElapsed;
+use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Uri;
+use Guzzle\Http\Exception\RequestException;
+use Guzzle\Http\Message\RequestInterface;
+use Guzzle\Http\Message\ResponseInterface;
+use Guzzle\Http\Stream\Stream;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\Queue;
 
 class Networking
@@ -65,7 +66,7 @@ class Networking
     protected $responseType;
 
     /** @var $response_headers array * */
-    protected  $response_headers;
+    protected $response_headers;
 
     /** @var $request RequestInterface * */
     protected $request;
@@ -82,31 +83,33 @@ class Networking
     /** @var $events Dispatcher * */
     protected $events;
 
-
     function __construct()
     {
-        if(function_exists('app')){
+        if (function_exists('app'))
+        {
             $this->events = app('events');
         }
         $this->setOptions($this->getDefaultOptions());
     }
 
-    public function getDefaultHeaders(){
-        return  [
+    public function getDefaultHeaders()
+    {
+        return [
             "Cache-Control" => "no-cache",
-            "Connection"    => "keep-alive",
+            "Connection" => "keep-alive",
             "Accept-Language" => "en;q=1",
             "Accept-Encoding" => "gzip, deflate",
-            "Proxy-Connection" => "keep-alive"
+            "Proxy-Connection" => "keep-alive",
         ];
     }
 
-    public function getDefaultOptions(){
+    public function getDefaultOptions()
+    {
         return [
-            'body'            => false,
-            'query'           => false,
+            'body' => false,
+            'query' => false,
             'allow_redirects' => false,
-            'auth'            => false
+            'auth' => false,
         ];
     }
 
@@ -135,30 +138,31 @@ class Networking
         $this->setUrl($this->baseUrl . $endpoint);
         $this->setRequestBody($fields);
 
-        if(!isset($this->queued)){
+        if (!isset($this->queued))
+        {
             $this->queued = false;
         }
 
-        $sha          = sha1(serialize($fields) . time());
-        $rel          = "/request/{$sha}";
+        $sha = sha1(serialize($fields) . time());
+        $rel = "/request/{$sha}";
 
         $this->syncRequest($body, $status_code, $cookie, $responseType);
 
         /*
-          TODO : Implement this...
-           if(!$this->queued){
-             $this->syncRequest($body, $status_code, $cookie, $responseType);
-           }else{
-             $this->asyncRequest($body, $status_code, $cookie, $responseType);
-            }
+        TODO : Implement this...
+        if(!$this->queued){
+        $this->syncRequest($body, $status_code, $cookie, $responseType);
+        }else{
+        $this->asyncRequest($body, $status_code, $cookie, $responseType);
+        }
          */
 
         $response = [
-            'body'         => $body,
-            'status_code'  => $status_code,
-            'cookie'       => $cookie,
+            'body' => $body,
+            'status_code' => $status_code,
+            'cookie' => $cookie,
             'responseType' => $responseType,
-            'rel'          => $rel
+            'rel' => $rel,
         ];
 
         return $response;
@@ -175,9 +179,19 @@ class Networking
         $this->finalize($client, $url, $opts, $method);
 
         /** $request RequestInterface * */
-        $request  = $client->createRequest($method, $url, $opts);
+        $cookieJar = $opts['cookies'];
+        $url       = new Uri($url);
+        foreach ($opts['query'] as $key => $value)
+        {
+            Uri::withQueryValue($url, $key, $value);
+        }
         /** $response ResponseInterface * */
-        $response = $client->send($request);
+        $response = $client->request($method, $url, $opts);
+
+        unset($opts['query']);
+        unset($opts['cookies']);
+        //Copy of our request for logging.
+        $request = new Request($method, $url, $opts);
 
         $this->setRequestAndResponse($request, $response);
     }
@@ -193,7 +207,7 @@ class Networking
         /** @var Client $client */
         $this->finalize($client, $url, $opts, $method);
 
-        $req = $client->createRequest($method, $url,$opts);
+        $req  = $client->createRequest($method, $url, $opts);
         $body = json_encode($this->getRequestBody());
         $req->setBody(Stream::factory($body));
         /** $response RequestInterface * */
@@ -212,24 +226,28 @@ class Networking
 
         $opts = [
             'headers' => $this->request_headers,
-            'cookies' => $this->jar
+            'cookies' => $this->jar,
         ];
 
-        if (!empty($fields)) {
+        if (!empty($fields))
+        {
             $config = $this->getOptions();
             //If the request is not a stream request then set the body.
-            if ($config['body']) {
+            if ($config['body'])
+            {
                 $opts['body'] = $fields;
             }
-            if ($config['query']) {
+            if ($config['query'])
+            {
                 $opts['query'] = $fields;
             }
-            if($config['allow_redirects']){
+            if ($config['allow_redirects'])
+            {
                 $opts['allow_redirects'] = [
-                    'max'       => 10,
-                    'strict'    => false,
-                    'referer'   => true,
-                    'protocols' => ["http","https"]
+                    'max' => 10,
+                    'strict' => false,
+                    'referer' => true,
+                    'protocols' => ["http", "https"],
                 ];
             }
         }
@@ -240,16 +258,21 @@ class Networking
      * Check for empty properties and set some sensible defaults
      *
      */
-    private function configureRequest(){
-        if(!isset($this->method)){
+    private function configureRequest()
+    {
+        if (!isset($this->method))
+        {
             $this->method = "get";
         }
-        if(!isset($this->baseUrl)){
+        if (!isset($this->baseUrl))
+        {
             $this->baseUrl = "http://httpbin.org/";
         }
-        if(!isset($this->request_headers)){
+        if (!isset($this->request_headers))
+        {
             $this->request_headers = $this->getDefaultHeaders();
-            if(isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body)){
+            if (isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body))
+            {
                 //Assume that a post request is submitting a standard urlencoded request
 
                 $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
@@ -264,30 +287,36 @@ class Networking
     private function getClient()
     {
 
-        $defaults = array();
+        $defaults = [];
 
-        if (!empty($this->proxy)) {
+        if (!empty($this->proxy))
+        {
             $defaults['proxy'] = $this->proxy;
         }
-        if (!empty($this->auth)) {
+        if (!empty($this->auth))
+        {
             $defaults['auth'] = $this->auth;
         }
 
         $guzzle = new Client([
             'base_url' => $this->url,
-            'defaults' => $defaults
+            'defaults' => $defaults,
         ]);
 
         return $guzzle;
     }
 
-    private function setJar(){
-        if(!isset($this->request_cookies)){
+    private function setJar()
+    {
+        if (!isset($this->request_cookies))
+        {
             $jar = new CookieJar();
-        }else{
-            $jar = new CookieJar(false,$this->request_cookies);
         }
-        $this->jar =  $jar;
+        else
+        {
+            $jar = new CookieJar(false, $this->request_cookies);
+        }
+        $this->jar = $jar;
     }
 
     private function getJar()
@@ -327,24 +356,25 @@ class Networking
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
 
-       if($this->events != null){
-           
+        if ($this->events != null)
+        {
+
             $payload = [
-                'status_code'           => $this->getStatusCode(),
-                'response_body'         => $this->getResponseBody(),
-                'request_body'          => $this->getRequestBody(),
-                'url'                   => $this->getUrl(),
-                'response_headers'      => $this->getResponseHeaders(),
-                'request_headers'       => $this->request_headers,
-                'cookies'               => $this->getCookies(),
-                'time_elapsed'          => $this->getTimeElapsed(),
-                'response_type'         => $this->getResponseType(),
-                'method'                => $this->method,
-                'multi'                 => $this->isMultiPart()
+                'status_code' => $this->getStatusCode(),
+                'response_body' => $this->getResponseBody(),
+                'request_body' => $this->getRequestBody(),
+                'url' => $this->getUrl(),
+                'response_headers' => $this->getResponseHeaders(),
+                'request_headers' => $this->request_headers,
+                'cookies' => $this->getCookies(),
+                'time_elapsed' => $this->getTimeElapsed(),
+                'response_type' => $this->getResponseType(),
+                'method' => $this->method,
+                'multi' => $this->isMultiPart(),
             ];
-        
-         $this->events->fire('networking.response.created', [$payload]);
-       }
+
+            $this->events->fire('networking.response.created', [$payload]);
+        }
     }
 
     /**
@@ -366,11 +396,10 @@ class Networking
     /**
      * @param RequestInterface $request
      */
-    private function setRequest(RequestInterface $request)
+    private function setRequest($request)
     {
         $this->request = $request;
     }
-
 
     /**
      * @return \GuzzleHttp\Message\ResponseInterface
@@ -384,20 +413,23 @@ class Networking
      * Set the response & related info from the response.
      * @param ResponseInterface $response
      */
-    private function setResponse(ResponseInterface $response)
+    private function setResponse($response)
     {
-           $is_json = false;
-        try{
-            $body             = json_decode($response->getBody(),true);
-            $is_json          = true;
-        }catch(\InvalidArgumentException $e){
+        $is_json = false;
+        try {
+            $body    = json_decode($response->getBody(), true);
+            $is_json = true;
+        }
+        catch (\InvalidArgumentException $e)
+        {
             $body = [$response->getBody()->__toString()];
         }
 
         //HTML/XML will always have an output.
-        if((count($body) < 1) && $is_json){
+        if ((count($body) < 1) && $is_json)
+        {
             $body = [
-                "message" => "No Response Received."
+                "message" => "No Response Received.",
             ];
         }
 
@@ -460,7 +492,6 @@ class Networking
         $this->response_body = $body;
     }
 
-
     /**
      * @return array
      */
@@ -493,15 +524,14 @@ class Networking
         $this->response_headers = $response_headers;
     }
 
-
     /**
      * @param $request
      * @param $response
      */
-    private function setRequestAndResponse(RequestInterface $request,ResponseInterface $response)
+    private function setRequestAndResponse($request, $response)
     {
         $this->setRequest($request);
-        $headers = $request->getHeaders();
+        $headers               = $request->getHeaders();
         $this->request_headers = isset($headers) ? $headers : ["headers invalid" => ":("];
         $this->setResponse($response);
         $this->setCookies($this->getJar());
@@ -517,13 +547,15 @@ class Networking
     {
         try {
             $this->createRequest();
-        } catch (RequestException $e) {
+        }
+        catch (RequestException $e)
+        {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
         }
-        $body = $this->getResponseBody();
-        $status_code = $this->getStatusCode();
-        $cookie = $this->getCookies();
+        $body         = $this->getResponseBody();
+        $status_code  = $this->getStatusCode();
+        $cookie       = $this->getCookies();
         $responseType = $this->getResponseType();
     }
 
@@ -535,16 +567,16 @@ class Networking
      */
     private function asyncRequest(&$body, &$status_code, &$cookie, &$responseType)
     {
-        $body = "request successfully enqueued";
-        $status_code = 201;
-        $cookie = [];
+        $body         = "request successfully enqueued";
+        $status_code  = 201;
+        $cookie       = [];
         $responseType = "json";
 
         $this->events->fire(['response.bus'], [
             'client' => $this->getClient(),
             'url' => $this->getUrl(),
             'options' => $this->configureOptions($this->getRequestBody()),
-            'method' => $this->method
+            'method' => $this->method,
         ]);
     }
 
@@ -570,15 +602,18 @@ class Networking
      */
     private function isMultiPart()
     {
-        if (array_key_exists('Content-Type',$this->request_headers)){
-            if(strpos($this->request_headers["Content-Type"],"multipart/form-data") == false) {
+        if (array_key_exists('Content-Type', $this->request_headers))
+        {
+            if (strpos($this->request_headers["Content-Type"], "multipart/form-data") == false)
+            {
                 return false;
-            }else{
+            }
+            else
+            {
                 return true;
             }
         }
         return false;
     }
-
 
 }
