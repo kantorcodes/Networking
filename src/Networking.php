@@ -181,9 +181,12 @@ class Networking
         /** $request RequestInterface * */
         $cookieJar = $opts['cookies'];
         $url       = new Uri($url);
-        foreach ($opts['query'] as $key => $value)
+        if (isset($opts['query']))
         {
-            Uri::withQueryValue($url, $key, $value);
+            foreach ($opts['query'] as $key => $value)
+            {
+                Uri::withQueryValue($url, $key, $value);
+            }
         }
         /** $response ResponseInterface * */
         $response = $client->request($method, $url, $opts);
@@ -191,7 +194,7 @@ class Networking
         unset($opts['query']);
         unset($opts['cookies']);
         //Copy of our request for logging.
-        $request = new Request($method, $url, $opts);
+        $request = new Request($method, $url, $opts['headers']);
 
         $this->setRequestAndResponse($request, $response);
     }
