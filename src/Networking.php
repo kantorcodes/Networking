@@ -185,14 +185,11 @@ class Networking
         {
             foreach ($opts['query'] as $key => $value)
             {
-                Uri::withQueryValue($url, $key, $value);
+                $url = Uri::withQueryValue($url, $key, $value);
             }
         }
         /** $response ResponseInterface * */
         $response = $client->request($method, $url, $opts);
-
-        unset($opts['query']);
-        unset($opts['cookies']);
         //Copy of our request for logging.
         $request = new Request($method, $url, $opts['headers']);
 
