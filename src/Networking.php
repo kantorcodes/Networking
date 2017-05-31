@@ -18,8 +18,7 @@ use Guzzle\Http\Stream\Stream;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\Queue;
 
-class Networking
-{
+class Networking {
     use TimeElapsed;
     /**
      * @var string
@@ -83,17 +82,14 @@ class Networking
     /** @var $events Dispatcher * */
     protected $events;
 
-    function __construct()
-    {
-        if (function_exists('app'))
-        {
+    function __construct() {
+        if (function_exists('app')) {
             $this->events = app('events');
         }
         $this->setOptions($this->getDefaultOptions());
     }
 
-    public function getDefaultHeaders()
-    {
+    public function getDefaultHeaders() {
         return [
             "Cache-Control" => "no-cache",
             "Connection" => "keep-alive",
@@ -103,8 +99,7 @@ class Networking
         ];
     }
 
-    public function getDefaultOptions()
-    {
+    public function getDefaultOptions() {
         return [
             'body' => false,
             'query' => false,
@@ -119,8 +114,7 @@ class Networking
      * a new array of options before calling send()
      * @param array $options
      */
-    public function setOptions(array $options)
-    {
+    public function setOptions(array $options) {
         $this->options = $options;
     }
 
@@ -132,14 +126,12 @@ class Networking
      * @param $method
      * @return array
      */
-    public function send(array $fields, $endpoint, $method)
-    {
+    public function send(array $fields, $endpoint, $method) {
         $this->method = $method;
         $this->setUrl($this->baseUrl . $endpoint);
         $this->setRequestBody($fields);
 
-        if (!isset($this->queued))
-        {
+        if (!isset($this->queued)) {
             $this->queued = false;
         }
 
@@ -171,8 +163,7 @@ class Networking
     /**
      * @return void
      */
-    private function createRequest()
-    {
+    private function createRequest() {
         $this->setStartedAt();
         $this->setJar();
         /** @var Client $client */
@@ -181,15 +172,16 @@ class Networking
         /** $request RequestInterface * */
         $cookieJar = $opts['cookies'];
         $url       = new Uri($url);
-        if (isset($opts['query']))
-        {
-            foreach ($opts['query'] as $key => $value)
-            {
-                $url = Uri::withQueryValue($url, $key, $value);
+        if (isset($opts['query']) && $opts['query'] != false) {
+            foreach ($opts['query'] as $key => $value) {
+                Uri::withQueryValue($url, $key, $value);
             }
         }
         /** $response ResponseInterface * */
         $response = $client->request($method, $url, $opts);
+
+        unset($opts['query']);
+        unset($opts['cookies']);
         //Copy of our request for logging.
         $request = new Request($method, $url, $opts['headers']);
 
@@ -200,8 +192,7 @@ class Networking
      *
      * @return \GuzzleHttp\Message\ResponseInterface
      */
-    public function createStreamRequest()
-    {
+    public function createStreamRequest() {
         $this->setStartedAt();
         $this->setJar();
         /** @var Client $client */
@@ -221,28 +212,23 @@ class Networking
      *
      * @return array
      */
-    private function configureOptions(array $fields)
-    {
+    private function configureOptions(array $fields) {
 
         $opts = [
             'headers' => $this->request_headers,
             'cookies' => $this->jar,
         ];
 
-        if (!empty($fields))
-        {
+        if (!empty($fields)) {
             $config = $this->getOptions();
             //If the request is not a stream request then set the body.
-            if ($config['body'])
-            {
-                $opts['body'] = $fields;
+            if ($config['body']) {
+                $opts['form_params'] = $fields;
             }
-            if ($config['query'])
-            {
+            if ($config['query']) {
                 $opts['query'] = $fields;
             }
-            if ($config['allow_redirects'])
-            {
+            if ($config['allow_redirects']) {
                 $opts['allow_redirects'] = [
                     'max' => 10,
                     'strict' => false,
@@ -258,21 +244,16 @@ class Networking
      * Check for empty properties and set some sensible defaults
      *
      */
-    private function configureRequest()
-    {
-        if (!isset($this->method))
-        {
+    private function configureRequest() {
+        if (!isset($this->method)) {
             $this->method = "get";
         }
-        if (!isset($this->baseUrl))
-        {
+        if (!isset($this->baseUrl)) {
             $this->baseUrl = "http://httpbin.org/";
         }
-        if (!isset($this->request_headers))
-        {
+        if (!isset($this->request_headers)) {
             $this->request_headers = $this->getDefaultHeaders();
-            if (isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body))
-            {
+            if (isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body)) {
                 //Assume that a post request is submitting a standard urlencoded request
 
                 $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
@@ -284,17 +265,14 @@ class Networking
     /**
      * @return Client
      */
-    private function getClient()
-    {
+    private function getClient() {
 
         $defaults = [];
 
-        if (!empty($this->proxy))
-        {
+        if (!empty($this->proxy)) {
             $defaults['proxy'] = $this->proxy;
         }
-        if (!empty($this->auth))
-        {
+        if (!empty($this->auth)) {
             $defaults['auth'] = $this->auth;
         }
 
@@ -306,58 +284,48 @@ class Networking
         return $guzzle;
     }
 
-    private function setJar()
-    {
-        if (!isset($this->request_cookies))
-        {
+    private function setJar() {
+        if (!isset($this->request_cookies)) {
             $jar = new CookieJar();
-        }
-        else
-        {
+        } else {
             $jar = new CookieJar(false, $this->request_cookies);
         }
         $this->jar = $jar;
     }
 
-    private function getJar()
-    {
+    private function getJar() {
         return $this->jar;
     }
 
     /**
      * @return string
      */
-    public function getUrl()
-    {
+    public function getUrl() {
         return $this->url;
     }
 
     /**
      * @param string $url
      */
-    private function setUrl($url)
-    {
+    private function setUrl($url) {
         $this->url = $url;
     }
 
     /**
      * @return array
      */
-    public function getCookies()
-    {
+    public function getCookies() {
         return $this->cookies;
     }
 
     /**
      * @param CookieJar $jar
      */
-    private function setCookies(CookieJar $jar)
-    {
+    private function setCookies(CookieJar $jar) {
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
 
-        if ($this->events != null)
-        {
+        if ($this->events != null) {
 
             $payload = [
                 'status_code' => $this->getStatusCode(),
@@ -380,32 +348,28 @@ class Networking
     /**
      * @return array
      */
-    private function getOptions()
-    {
+    private function getOptions() {
         return $this->options;
     }
 
     /**
      * @return RequestInterface
      */
-    private function getRequest()
-    {
+    private function getRequest() {
         return $this->request;
     }
 
     /**
      * @param RequestInterface $request
      */
-    private function setRequest($request)
-    {
+    private function setRequest($request) {
         $this->request = $request;
     }
 
     /**
      * @return \GuzzleHttp\Message\ResponseInterface
      */
-    private function getResponse()
-    {
+    private function getResponse() {
         return $this->response;
     }
 
@@ -413,21 +377,17 @@ class Networking
      * Set the response & related info from the response.
      * @param ResponseInterface $response
      */
-    private function setResponse($response)
-    {
+    private function setResponse($response) {
         $is_json = false;
         try {
             $body    = json_decode($response->getBody(), true);
             $is_json = true;
-        }
-        catch (\InvalidArgumentException $e)
-        {
+        } catch (\InvalidArgumentException $e) {
             $body = [$response->getBody()->__toString()];
         }
 
         //HTML/XML will always have an output.
-        if ((count($body) < 1) && $is_json)
-        {
+        if ((count($body) < 1) && $is_json) {
             $body = [
                 "message" => "No Response Received.",
             ];
@@ -447,80 +407,70 @@ class Networking
     /**
      * @return String
      */
-    public function getResponseType()
-    {
+    public function getResponseType() {
         return $this->responseType;
     }
 
     /**
      * @param String $responseType
      */
-    public function setResponseType($responseType)
-    {
+    public function setResponseType($responseType) {
         $this->responseType = $responseType;
     }
 
     /**
      * @return Int
      */
-    public function getStatusCode()
-    {
+    public function getStatusCode() {
         return $this->status_code;
     }
 
     /**
      * @param Int $status_code
      */
-    private function setStatusCode($status_code)
-    {
+    private function setStatusCode($status_code) {
         $this->status_code = $status_code;
     }
 
     /**
      * @return array
      */
-    public function getResponseBody()
-    {
+    public function getResponseBody() {
         return $this->response_body;
     }
 
     /**
      * @param array $body
      */
-    public function setResponseBody(array $body)
-    {
+    public function setResponseBody(array $body) {
         $this->response_body = $body;
     }
 
     /**
      * @return array
      */
-    public function getRequestBody()
-    {
+    public function getRequestBody() {
         return $this->request_body;
     }
 
     /**
      * @param array $body
      */
-    private function setRequestBody(array $body)
-    {
+    private function setRequestBody(array $body) {
         $this->request_body = $body;
     }
 
     /**
      * @return array
      */
-    public function getResponseHeaders()
-    {
+    public function getResponseHeaders() {
         return $this->response_headers;
     }
 
     /**
      * @param array $response_headers
      */
-    public function setResponseHeaders($response_headers)
-    {
+    public function setResponseHeaders($response_headers) {
         $this->response_headers = $response_headers;
     }
 
@@ -528,8 +478,7 @@ class Networking
      * @param $request
      * @param $response
      */
-    private function setRequestAndResponse($request, $response)
-    {
+    private function setRequestAndResponse($request, $response) {
         $this->setRequest($request);
         $headers               = $request->getHeaders();
         $this->request_headers = isset($headers) ? $headers : ["headers invalid" => ":("];
@@ -543,13 +492,10 @@ class Networking
      * @param $cookie
      * @param $responseType
      */
-    private function syncRequest(&$body, &$status_code, &$cookie, &$responseType)
-    {
+    private function syncRequest(&$body, &$status_code, &$cookie, &$responseType) {
         try {
             $this->createRequest();
-        }
-        catch (RequestException $e)
-        {
+        } catch (RequestException $e) {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
         }
@@ -565,8 +511,7 @@ class Networking
      * @param $cookie
      * @param $responseType
      */
-    private function asyncRequest(&$body, &$status_code, &$cookie, &$responseType)
-    {
+    private function asyncRequest(&$body, &$status_code, &$cookie, &$responseType) {
         $body         = "request successfully enqueued";
         $status_code  = 201;
         $cookie       = [];
@@ -586,8 +531,7 @@ class Networking
      * @param array $opts
      * @param string $method
      */
-    private function finalize(&$client, &$url, &$opts, &$method)
-    {
+    private function finalize(&$client, &$url, &$opts, &$method) {
         /* Do final setup before sending the request..*/
         $this->configureRequest();
         $client = $this->getClient();
@@ -600,16 +544,11 @@ class Networking
      *
      * @return bool
      */
-    private function isMultiPart()
-    {
-        if (array_key_exists('Content-Type', $this->request_headers))
-        {
-            if (strpos($this->request_headers["Content-Type"], "multipart/form-data") == false)
-            {
+    private function isMultiPart() {
+        if (array_key_exists('Content-Type', $this->request_headers)) {
+            if (strpos($this->request_headers["Content-Type"], "multipart/form-data") == false) {
                 return false;
-            }
-            else
-            {
+            } else {
                 return true;
             }
         }
