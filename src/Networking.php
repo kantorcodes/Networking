@@ -209,7 +209,7 @@ class Networking
         /** @var Client $client */
         $this->finalize($client, $url, $opts, $method);
         $req      = $client->request($method, $url, [$opts['headers'], 'json' => $this->getRequestBody()]);
-        $response = json_decode((String) $req->getBody());
+        $response = json_decode((String) $req->getBody(), true);
 
         return $response;
     }
