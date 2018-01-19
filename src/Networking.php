@@ -170,7 +170,7 @@ class Networking
     /**
      * @return void
      */
-    private function createRequest()
+   private function createRequest()
     {
         $this->setStartedAt();
         $this->setJar();
@@ -187,6 +187,7 @@ class Networking
                 Uri::withQueryValue($url, $key, $value);
             }
         }
+        $opts['verify'] = config('app.verify_ssl',true);
         /** $response ResponseInterface * */
         $response = $client->request($method, $url, $opts);
 
