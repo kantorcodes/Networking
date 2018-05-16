@@ -82,10 +82,9 @@ class Networking
     /** @var $events Dispatcher * */
     protected $events;
 
-    function __construct()
+    public function __construct()
     {
-        if (function_exists('app'))
-        {
+        if (function_exists('app')) {
             $this->events = app('events');
         }
         $this->setOptions($this->getDefaultOptions());
@@ -137,8 +136,7 @@ class Networking
         $this->setUrl($this->baseUrl . $endpoint);
         $this->setRequestBody($fields);
 
-        if (!isset($this->queued))
-        {
+        if (!isset($this->queued)) {
             $this->queued = false;
         }
 
@@ -170,7 +168,7 @@ class Networking
     /**
      * @return void
      */
-   private function createRequest()
+    private function createRequest()
     {
         $this->setStartedAt();
         $this->setJar();
@@ -179,15 +177,13 @@ class Networking
 
         /** $request RequestInterface * */
         $cookieJar = $opts['cookies'];
-        $url       = new Uri($url);
-        if (isset($opts['query']) && $opts['query'] != false)
-        {
-            foreach ($opts['query'] as $key => $value)
-            {
+        $url = new Uri($url);
+        if (isset($opts['query']) && $opts['query'] != false) {
+            foreach ($opts['query'] as $key => $value) {
                 Uri::withQueryValue($url, $key, $value);
             }
         }
-        $opts['verify'] = config('app.verify_ssl',true);
+        $opts['verify'] = config('app.verify_ssl', true);
         /** $response ResponseInterface * */
         $response = $client->request($method, $url, $opts);
 
@@ -209,10 +205,23 @@ class Networking
         $this->setJar();
         /** @var Client $client */
         $this->finalize($client, $url, $opts, $method);
-        $req      = $client->request($method, $url, [$opts['headers'], 'json' => $this->getRequestBody()]);
+        $req = $client->request($method, $url, ['headers' => $opts['headers'], 'json' => $this->getRequestBody()]);
         $response = json_decode((String) $req->getBody(), true);
+        dd($req->getBody());
 
         return $response;
+    }
+
+    public function createDownloadRequest()
+    {
+        $this->setStartedAt();
+        $this->setJar();
+        /** @var Client $client */
+        $this->finalize($client, $url, $opts, $method);
+        $req = $client->request($method, $url, ['headers' => $opts['headers'], 'json' => $this->getRequestBody()]);
+
+        return $req->getBody();
+
     }
 
     /**
@@ -222,26 +231,21 @@ class Networking
      */
     private function configureOptions(array $fields)
     {
-
         $opts = [
             'headers' => $this->request_headers,
             'cookies' => $this->jar,
         ];
 
-        if (!empty($fields))
-        {
+        if (!empty($fields)) {
             $config = $this->getOptions();
             //If the request is not a stream request then set the body.
-            if ($config['body'])
-            {
+            if ($config['body']) {
                 $opts['form_params'] = $fields;
             }
-            if ($config['query'])
-            {
+            if ($config['query']) {
                 $opts['query'] = $fields;
             }
-            if ($config['allow_redirects'])
-            {
+            if ($config['allow_redirects']) {
                 $opts['allow_redirects'] = [
                     'max' => 10,
                     'strict' => false,
@@ -259,23 +263,19 @@ class Networking
      */
     private function configureRequest()
     {
-        if (!isset($this->method))
-        {
+        if (!isset($this->method)) {
             $this->method = "get";
         }
-        if (!isset($this->baseUrl))
-        {
+        if (!isset($this->baseUrl)) {
             $this->baseUrl = "http://httpbin.org/";
         }
-        if (!isset($this->request_headers))
-        {
+        if (!isset($this->request_headers)) {
             $this->request_headers = $this->getDefaultHeaders();
-            if (isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body))
-            {
+            if (isset($this->method) && $this->method == "post" && $this->options["query"] == false && isset($this->request_body)) {
                 //Assume that a post request is submitting a standard urlencoded request
 
                 $this->request_headers["Content-Type"] = "application/x-www-form-urlencoded";
-                $this->options["body"]                 = true;
+                $this->options["body"] = true;
             }
         }
     }
@@ -285,15 +285,12 @@ class Networking
      */
     private function getClient()
     {
-
         $defaults = [];
 
-        if (!empty($this->proxy))
-        {
+        if (!empty($this->proxy)) {
             $defaults['proxy'] = $this->proxy;
         }
-        if (!empty($this->auth))
-        {
+        if (!empty($this->auth)) {
             $defaults['auth'] = $this->auth;
         }
 
@@ -307,12 +304,9 @@ class Networking
 
     private function setJar()
     {
-        if (!isset($this->request_cookies))
-        {
+        if (!isset($this->request_cookies)) {
             $jar = new CookieJar();
-        }
-        else
-        {
+        } else {
             $jar = new CookieJar(false, $this->request_cookies);
         }
         $this->jar = $jar;
@@ -355,9 +349,7 @@ class Networking
         $jar->extractCookies($this->getRequest(), $this->getResponse());
         $this->cookies = $jar->toArray();
 
-        if ($this->events != null)
-        {
-
+        if ($this->events != null) {
             $payload = [
                 'status_code' => $this->getStatusCode(),
                 'response_body' => $this->getResponseBody(),
@@ -416,23 +408,20 @@ class Networking
     {
         $is_json = false;
         try {
-            $body    = json_decode($response->getBody(), true);
+            $body = json_decode($response->getBody(), true);
             $is_json = true;
-        }
-        catch (\InvalidArgumentException $e)
-        {
+        } catch (\InvalidArgumentException $e) {
             $body = [$response->getBody()->__toString()];
         }
 
         //HTML/XML will always have an output.
-        if ((count($body) < 1) && $is_json)
-        {
+        if ((count($body) < 1) && $is_json) {
             $body = [
                 "message" => "No Response Received.",
             ];
         }
 
-        $status_code      = $response->getStatusCode();
+        $status_code = $response->getStatusCode();
         $response_headers = $response->getHeaders();
 
         $this->setEndedAt();
@@ -530,7 +519,7 @@ class Networking
     private function setRequestAndResponse($request, $response)
     {
         $this->setRequest($request);
-        $headers               = $request->getHeaders();
+        $headers = $request->getHeaders();
         $this->request_headers = isset($headers) ? $headers : ["headers invalid" => ":("];
         $this->setResponse($response);
         $this->setCookies($this->getJar());
@@ -546,15 +535,13 @@ class Networking
     {
         try {
             $this->createRequest();
-        }
-        catch (RequestException $e)
-        {
+        } catch (RequestException $e) {
             //If request fails we recreate the required fields from the error
             $this->setRequestAndResponse($e->getRequest(), $e->getResponse());
         }
-        $body         = $this->getResponseBody();
-        $status_code  = $this->getStatusCode();
-        $cookie       = $this->getCookies();
+        $body = $this->getResponseBody();
+        $status_code = $this->getStatusCode();
+        $cookie = $this->getCookies();
         $responseType = $this->getResponseType();
     }
 
@@ -566,9 +553,9 @@ class Networking
      */
     private function asyncRequest(&$body, &$status_code, &$cookie, &$responseType)
     {
-        $body         = "request successfully enqueued";
-        $status_code  = 201;
-        $cookie       = [];
+        $body = "request successfully enqueued";
+        $status_code = 201;
+        $cookie = [];
         $responseType = "json";
 
         $this->events->fire(['response.bus'], [
@@ -590,8 +577,8 @@ class Networking
         /* Do final setup before sending the request..*/
         $this->configureRequest();
         $client = $this->getClient();
-        $url    = $this->getUrl();
-        $opts   = $this->configureOptions($this->getRequestBody());
+        $url = $this->getUrl();
+        $opts = $this->configureOptions($this->getRequestBody());
         $method = $this->method;
     }
 
@@ -601,18 +588,13 @@ class Networking
      */
     private function isMultiPart()
     {
-        if (array_key_exists('Content-Type', $this->request_headers))
-        {
-            if (strpos($this->request_headers["Content-Type"], "multipart/form-data") == false)
-            {
+        if (array_key_exists('Content-Type', $this->request_headers)) {
+            if (strpos($this->request_headers["Content-Type"], "multipart/form-data") == false) {
                 return false;
-            }
-            else
-            {
+            } else {
                 return true;
             }
         }
         return false;
     }
-
 }
